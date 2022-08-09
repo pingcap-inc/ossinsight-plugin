@@ -1,15 +1,28 @@
 package fetcher
 
 import (
+	"fmt"
+	"io/ioutil"
 	"sync"
 	"testing"
 )
 
 func TestFetchJson(t *testing.T) {
-	_, err := FetchJson()
+	result, err := FetchJson(1)
 	if err != nil {
 		t.Error(err)
 	}
+
+	ioutil.WriteFile("test.json", result, 0666)
+}
+
+func TestFetchEvents(t *testing.T) {
+	events, err := FetchEvents(10)
+	if err != nil {
+		t.Error(err)
+	}
+
+	fmt.Println(events)
 }
 
 func TestConcurrentFetchJson(t *testing.T) {
@@ -22,7 +35,7 @@ func TestConcurrentFetchJson(t *testing.T) {
 			defer waitGroup.Done()
 
 			for j := 0; j < loopNum; j++ {
-				_, err := FetchJson()
+				_, err := FetchJson(100)
 				if err != nil {
 					t.Error(err)
 				}
