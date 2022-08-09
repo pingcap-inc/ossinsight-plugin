@@ -16,7 +16,7 @@ func TestMessage(t *testing.T) {
 	messageNum := 10
 	for i := 0; i < messageNum; i++ {
 		go func() {
-			err := Send([]byte("hello world"), "key", nil)
+			err := Send([]byte("hello world"), "key")
 			if err != nil {
 				t.Error(err)
 			}

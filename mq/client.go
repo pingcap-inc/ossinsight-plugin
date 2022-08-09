@@ -11,12 +11,13 @@ import (
 var (
 	client         pulsar.Client
 	clientInitOnce sync.Once
+	readonlyConfig config.Config
 )
 
 // initClient Initial client instance. Use clientInitOnce to ensure initial only once.
 func initClient() {
 	clientInitOnce.Do(func() {
-		readonlyConfig := config.GetReadonlyConfig()
+		readonlyConfig = config.GetReadonlyConfig()
 
 		oauth := pulsar.NewAuthenticationOAuth2(map[string]string{
 			"type":       "client_credentials",

@@ -22,8 +22,6 @@ func StartConsume(consumeFunc ConsumeFunc) {
 	initClient()
 
 	consumerInitOnce.Do(func() {
-		readonlyConfig := config.GetReadonlyConfig()
-
 		for i := 0; i < readonlyConfig.Pulsar.Consumer.Concurrency; i++ {
 			go perConsumer(readonlyConfig, consumeFunc)
 		}
