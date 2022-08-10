@@ -1,19 +1,5 @@
 package config
 
-// Loop
-type Loop struct {
-	Timeout int `yaml:"timeout"`
-	Break   int `yaml:"break"`
-}
-
-// Config
-type Config struct {
-	Http   Http   `yaml:"http"`
-	Log    Log    `yaml:"log"`
-	Pulsar Pulsar `yaml:"pulsar"`
-	Github Github `yaml:"github"`
-}
-
 // Http
 type Http struct {
 	Port int `yaml:"port"`
@@ -50,6 +36,21 @@ type Consumer struct {
 
 // Github
 type Github struct {
-	Loop Loop `yaml:"loop"`
+	Loop   Loop     `yaml:"loop"`
+	Tokens []string `yaml:"tokens"`
+}
+
+// Loop
+type Loop struct {
+	Timeout int `yaml:"timeout"`
+	Break   int `yaml:"break"`
+}
+
+// Config
+type Config struct {
+	Http   Http   `yaml:"http"`
+	Log    Log    `yaml:"log"`
+	Pulsar Pulsar `yaml:"pulsar"`
+	Github Github `yaml:"github"`
 }
 
