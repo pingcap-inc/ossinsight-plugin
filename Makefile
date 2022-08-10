@@ -12,10 +12,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.PHONY: etcd config
+.PHONY: redis config
 
-etcd:
-	./start-test-etch.sh
+redis:
+	docker run -itd --name redis-test -p 6379:6379 redis
+
+clean:
+	docker stop redis-test
+	docker rm redis-test
 
 config:
 	go install github.com/Icemap/yaml2go-cli@latest

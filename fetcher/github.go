@@ -6,6 +6,7 @@ import (
 	"github.com/pingcap-inc/ossinsight-plugin/config"
 	"github.com/pingcap-inc/ossinsight-plugin/logger"
 	"github.com/pingcap-inc/ossinsight-plugin/mq"
+	"github.com/pingcap-inc/ossinsight-plugin/redis"
 	"go.uber.org/atomic"
 	"io/ioutil"
 	"net/http"
@@ -74,27 +75,40 @@ func InitLoop() {
 	readonlyConfig := config.GetReadonlyConfig()
 	loopBreak := readonlyConfig.Github.Loop.Break
 	for range time.Tick(time.Duration(loopBreak) * time.Millisecond) {
-		logger.Debug("start to request github", zap.Int("loopBreak", loopBreak))
+		go func() {
+			logger.Debug("start to request github", zap.Int("loopBreak", loopBreak))
 
-		events, err := FetchEvents(100)
-		if err != nil {
-			logger.Error("fetch event error", zap.Error(err))
-			return
-		}
-
-		for _, event := range events {
-			marshaledEvent, err := json.Marshal(event)
+			events, err := FetchEvents(100)
 			if err != nil {
-				logger.Error("marshal event error", zap.Error(err))
-				continue
+				logger.Error("fetch event error", zap.Error(err))
+				return
 			}
 
-			err = mq.Send(marshaledEvent, "")
-			if err != nil {
-				logger.Error("seq id parse error", zap.Error(err))
-				continue
+			for _, event := range events {
+				exists, err := redis.ExistsAndSet(event.ID)
+				if err != nil {
+					logger.Error("redis request error", zap.Error(err))
+					continue
+				}
+
+				if exists {
+					logger.Debug("event already exists, skip it", zap.String("id", event.ID))
+					continue
+				}
+
+				marshaledEvent, err := json.Marshal(event)
+				if err != nil {
+					logger.Error("marshal event error", zap.Error(err))
+					continue
+				}
+
+				err = mq.Send(marshaledEvent, "")
+				if err != nil {
+					logger.Error("seq id parse error", zap.Error(err))
+					continue
+				}
 			}
-		}
+		}()
 	}
 }
 

@@ -17,7 +17,7 @@ func main() {
 		var event fetcher.Event
 		err := json.Unmarshal(payload, &event)
 		if err != nil {
-			logger.Debug("event unmarshal error", zap.Error(err))
+			logger.Error("event unmarshal error", zap.Error(err))
 
 			// drop this message
 			return nil
