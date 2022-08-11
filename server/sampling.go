@@ -27,20 +27,15 @@ import (
     "time"
 )
 
-type LoopConfig struct {
-    LoopTime  int    `json:"loopTime"`
-    EventType string `json:"eventType"`
-    RepoName  string `json:"repoName"`
-    UserName  string `json:"userName"`
-    Detail    bool   `json:"detail"`
+type SamplingConfig struct {
+    SamplingRate int    `json:"samplingRate"`
+    EventType    string `json:"eventType"`
+    RepoName     string `json:"repoName"`
+    UserName     string `json:"userName"`
+    Detail       bool   `json:"detail"`
 }
 
-type LoopResult struct {
-    MsgList []fetcher.Event `json:"msgList"`
-    TypeMap map[string]int  `json:"typeMap"`
-}
-
-func loopHandler(w http.ResponseWriter, r *http.Request, upgrader *websocket.Upgrader) {
+func samplingHandler(w http.ResponseWriter, r *http.Request, upgrader *websocket.Upgrader) {
     connection, err := upgrader.Upgrade(w, r, nil)
     if err != nil {
         logger.Error("upgrade websocket error", zap.Error(err))
@@ -50,13 +45,13 @@ func loopHandler(w http.ResponseWriter, r *http.Request, upgrader *websocket.Upg
     name := strconv.FormatInt(time.Now().UnixNano(), 10) +
         strconv.FormatInt(rand.Int63(), 10)
 
-    configChan := make(chan LoopConfig)
-    go readLoopHandler(name, connection, configChan)
-    go writeLoopHandler(name, connection, configChan)
+    configChan := make(chan SamplingConfig)
+    go readSamplingHandler(name, connection, configChan)
+    go writeSamplingHandler(name, connection, configChan)
 }
 
-func writeLoopHandler(name string, connection *websocket.Conn, configChan chan LoopConfig) {
-    loopConfig := <-configChan
+func writeSamplingHandler(name string, connection *websocket.Conn, configChan chan SamplingConfig) {
+    samplingConfig := <-configChan
 
     listener := make(chan fetcher.Event)
     err := ListenerRegister(name, listener)
@@ -65,60 +60,33 @@ func writeLoopHandler(name string, connection *websocket.Conn, configChan chan L
         return
     }
 
-    var msgList []fetcher.Event
+    currentCount := 0
     go func() {
         for {
             msg := <-listener
-
-            // filters
-            if len(loopConfig.EventType) > 0 && msg.Type != loopConfig.EventType {
+            if !remain(msg, samplingConfig.EventType, samplingConfig.RepoName, samplingConfig.UserName) {
                 continue
             }
 
-            if len(loopConfig.RepoName) > 0 && msg.Repo.Name != loopConfig.RepoName {
-                continue
-            }
+            currentCount++
+            if currentCount%samplingConfig.SamplingRate == 0 {
+                data, err := json.Marshal(msg)
+                if err != nil {
+                    logger.Error("marshal error", zap.Error(err))
+                    return
+                }
 
-            if len(loopConfig.UserName) > 0 && msg.Actor.Login != loopConfig.UserName {
-                continue
+                err = connection.WriteMessage(websocket.TextMessage, data)
+                if err != nil {
+                    logger.Error("write error", zap.Error(err))
+                    return
+                }
             }
-
-            msgList = append(msgList, msg)
         }
     }()
-
-    for range time.Tick(time.Duration(loopConfig.LoopTime) * time.Millisecond) {
-        typeMap := make(map[string]int)
-        for _, msg := range msgList {
-            if _, exist := typeMap[msg.Type]; !exist {
-                typeMap[msg.Type] = 0
-            }
-
-            typeMap[msg.Type] = typeMap[msg.Type] + 1
-        }
-
-        result := LoopResult{TypeMap: typeMap}
-        if loopConfig.Detail {
-            result.MsgList = msgList
-        }
-
-        data, err := json.Marshal(result)
-        if err != nil {
-            logger.Error("marshal error", zap.Error(err))
-            return
-        }
-
-        msgList = []fetcher.Event{}
-
-        err = connection.WriteMessage(websocket.TextMessage, data)
-        if err != nil {
-            logger.Error("write error", zap.Error(err))
-            return
-        }
-    }
 }
 
-func readLoopHandler(name string, connection *websocket.Conn, configChan chan LoopConfig) {
+func readSamplingHandler(name string, connection *websocket.Conn, configChan chan SamplingConfig) {
     defer func() {
         ListenerDelete(name)
         connection.Close()
@@ -139,15 +107,15 @@ func readLoopHandler(name string, connection *websocket.Conn, configChan chan Lo
             }
             // Get Config
             logger.Debug("got text message", zap.ByteString("msg", msg))
-            loopConfig := new(LoopConfig)
-            err = json.Unmarshal(msg, loopConfig)
+            samplingConfig := new(SamplingConfig)
+            err = json.Unmarshal(msg, samplingConfig)
             if err != nil {
                 log.Println("config parse error:", err)
                 return
             }
 
             configSet = true
-            configChan <- *loopConfig
+            configChan <- *samplingConfig
         }
     }
 }

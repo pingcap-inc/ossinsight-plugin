@@ -17,6 +17,7 @@ package main
 import (
     "github.com/gorilla/websocket"
     "github.com/pingcap-inc/ossinsight-plugin/config"
+    "github.com/pingcap-inc/ossinsight-plugin/fetcher"
     "github.com/pingcap-inc/ossinsight-plugin/logger"
     "go.uber.org/zap"
     "net/http"
@@ -34,10 +35,30 @@ func createWebsocket() {
         loopHandler(w, r, upgrader)
     })
 
+    http.HandleFunc("/sampling", func(w http.ResponseWriter, r *http.Request) {
+        samplingHandler(w, r, upgrader)
+    })
+
     port := readonlyConfig.Server.Websocket.Port
     err := http.ListenAndServe(":"+strconv.Itoa(port), nil)
     if err != nil {
         logger.Fatal("websocket server start error", zap.Error(err))
     }
     logger.Info("websocket start", zap.Int("port", port))
+}
+
+func remain(msg fetcher.Event, eventType, repoName, userName string) bool {
+    if len(eventType) > 0 && msg.Type != eventType {
+        return false
+    }
+
+    if len(repoName) > 0 && msg.Repo.Name != repoName {
+        return false
+    }
+
+    if len(userName) > 0 && msg.Actor.Login != userName {
+        return false
+    }
+
+    return true
 }
