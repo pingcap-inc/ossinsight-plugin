@@ -15,28 +15,35 @@
 package main
 
 import (
-    "encoding/json"
-    "github.com/apache/pulsar-client-go/pulsar"
+    "fmt"
     "github.com/pingcap-inc/ossinsight-plugin/fetcher"
     "github.com/pingcap-inc/ossinsight-plugin/logger"
-    "github.com/pingcap-inc/ossinsight-plugin/mq"
     "go.uber.org/zap"
 )
 
-func startConsumeMessage() {
-    mq.StartConsume(func(message pulsar.Message) error {
-        payload := message.Payload()
+var listenerMap = make(map[string]chan fetcher.Event)
 
-        var event fetcher.Event
-        err := json.Unmarshal(payload, &event)
-        if err != nil {
-            logger.Error("event unmarshal error", zap.Error(err))
-            // drop this message, or it will block whole topic
-            return nil
+func ListenerRegister(key string, listener chan fetcher.Event) error {
+    logger.Debug("register listener", zap.String("key", key))
+    if listener == nil {
+        return fmt.Errorf("listener is nil, please ckeck it")
+    }
+
+    listenerMap[key] = listener
+
+    return nil
+}
+
+func ListenerDelete(key string) {
+    logger.Debug("delete listener", zap.String("key", key))
+    delete(listenerMap, key)
+}
+
+func DispatchEvent(event fetcher.Event) {
+    // use another goroutine to prevent block listener has blocked channel
+    go func() {
+        for key := range listenerMap {
+            listenerMap[key] <- event
         }
-
-        // dispatch event to all listeners
-        DispatchEvent(event)
-        return nil
-    })
+    }()
 }

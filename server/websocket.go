@@ -15,28 +15,29 @@
 package main
 
 import (
-    "encoding/json"
-    "github.com/apache/pulsar-client-go/pulsar"
-    "github.com/pingcap-inc/ossinsight-plugin/fetcher"
+    "github.com/gorilla/websocket"
+    "github.com/pingcap-inc/ossinsight-plugin/config"
     "github.com/pingcap-inc/ossinsight-plugin/logger"
-    "github.com/pingcap-inc/ossinsight-plugin/mq"
     "go.uber.org/zap"
+    "net/http"
+    "strconv"
 )
 
-func startConsumeMessage() {
-    mq.StartConsume(func(message pulsar.Message) error {
-        payload := message.Payload()
+func createWebsocket() {
+    readonlyConfig := config.GetReadonlyConfig()
 
-        var event fetcher.Event
-        err := json.Unmarshal(payload, &event)
-        if err != nil {
-            logger.Error("event unmarshal error", zap.Error(err))
-            // drop this message, or it will block whole topic
-            return nil
-        }
+    upgrader := &websocket.Upgrader{
+        CheckOrigin: func(r *http.Request) bool { return true },
+    }
 
-        // dispatch event to all listeners
-        DispatchEvent(event)
-        return nil
+    http.HandleFunc("/loop", func(w http.ResponseWriter, r *http.Request) {
+        loopHandler(w, r, upgrader)
     })
+
+    port := readonlyConfig.Server.Websocket.Port
+    err := http.ListenAndServe(":"+strconv.Itoa(port), nil)
+    if err != nil {
+        logger.Fatal("websocket server start error", zap.Error(err))
+    }
+    logger.Info("websocket start", zap.Int("port", port))
 }

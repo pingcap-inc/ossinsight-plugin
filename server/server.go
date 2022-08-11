@@ -15,12 +15,7 @@
 package main
 
 import (
-    "encoding/json"
-    "github.com/apache/pulsar-client-go/pulsar"
     "github.com/pingcap-inc/ossinsight-plugin/fetcher"
-    "github.com/pingcap-inc/ossinsight-plugin/logger"
-    "github.com/pingcap-inc/ossinsight-plugin/mq"
-    "go.uber.org/zap"
 )
 
 func main() {
@@ -28,21 +23,9 @@ func main() {
     go fetcher.InitLoop()
 
     // start to consume message
-    mq.StartConsume(func(message pulsar.Message) error {
-        payload := message.Payload()
+    startConsumeMessage()
 
-        var event fetcher.Event
-        err := json.Unmarshal(payload, &event)
-        if err != nil {
-            logger.Error("event unmarshal error", zap.Error(err))
-
-            // drop this message
-            return nil
-        }
-        logger.Debug("print message", zap.String("username", event.Actor.Login))
-
-        return nil
-    })
+    createWebsocket()
 
     wait := make(chan int)
     <-wait
