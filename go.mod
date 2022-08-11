@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/apache/pulsar-client-go v0.8.1
+	github.com/go-redis/redis/v9 v9.0.0-beta.2
 	github.com/pingcap/log v1.1.0
 	github.com/spf13/viper v1.12.0
 	go.uber.org/atomic v1.9.0
@@ -24,13 +25,11 @@ require (
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/dvsekhvalnov/jose2go v0.0.0-20200901110807-248326c1351b // indirect
 	github.com/fsnotify/fsnotify v1.5.4 // indirect
-	github.com/go-redis/redis/v9 v9.0.0-beta.2 // indirect
 	github.com/godbus/dbus v0.0.0-20190726142602-4481cbc300e2 // indirect
 	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
-	github.com/gorilla/websocket v1.5.0 // indirect
 	github.com/gsterjov/go-libsecret v0.0.0-20161001094733-a6f4afe4910c // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/keybase/go-keychain v0.0.0-20190712205309-48d3d31d256d // indirect
