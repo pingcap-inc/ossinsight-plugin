@@ -20,6 +20,7 @@ import (
     "github.com/pingcap-inc/ossinsight-plugin/fetcher"
     "github.com/pingcap-inc/ossinsight-plugin/logger"
     "go.uber.org/zap"
+    "io"
     "net/http"
     "strconv"
 )
@@ -39,7 +40,11 @@ func createWebsocket() {
         samplingHandler(w, r, upgrader)
     })
 
-    port := readonlyConfig.Server.Websocket.Port
+    http.HandleFunc(readonlyConfig.Server.Health, func(w http.ResponseWriter, r *http.Request) {
+        io.WriteString(w, "OK")
+    })
+
+    port := readonlyConfig.Server.Port
     err := http.ListenAndServe(":"+strconv.Itoa(port), nil)
     if err != nil {
         logger.Fatal("websocket server start error", zap.Error(err))
