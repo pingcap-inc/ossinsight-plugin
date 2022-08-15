@@ -20,7 +20,6 @@ import (
     "github.com/pingcap-inc/ossinsight-plugin/fetcher"
     "github.com/pingcap-inc/ossinsight-plugin/logger"
     "go.uber.org/zap"
-    "log"
     "math/rand"
     "net/http"
     "strconv"
@@ -132,7 +131,12 @@ func readLoopHandler(name string, connection *websocket.Conn, configChan chan Lo
             loopConfig := new(LoopConfig)
             err = json.Unmarshal(msg, loopConfig)
             if err != nil {
-                log.Println("config parse error:", err)
+                logger.Error("config parse error", zap.Error(err))
+                return
+            }
+
+            if loopConfig.LoopTime < 500 {
+                logger.Error("loop too fast", zap.Int("loop time", loopConfig.LoopTime))
                 return
             }
 

@@ -32,7 +32,6 @@ type SamplingConfig struct {
     EventType    string `json:"eventType"`
     RepoName     string `json:"repoName"`
     UserName     string `json:"userName"`
-    Detail       bool   `json:"detail"`
 }
 
 func samplingHandler(w http.ResponseWriter, r *http.Request, upgrader *websocket.Upgrader) {
