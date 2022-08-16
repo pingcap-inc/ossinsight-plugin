@@ -75,7 +75,8 @@ Sampling message and return to client.
     | `eventType` | No | string | Specify the event type you want to see. If you don't set it, all event types will be returned. |
     | `repoName` | No | string | Specify the repo name you want to see. If you don't set it, all repo names will be returned. |
     | `userName` | No | string | Specify the user name you want to see. If you don't set it, all user names will be returned. |
-
+    | `filter` | No | string list | Specify the fields you want to see. If you don't set it, all fields will be returned. (This param will change result struct)|
+    
     E.g.:
 
     ```json
@@ -87,7 +88,33 @@ Sampling message and return to client.
     }
     ```
 
-- Result same as GitHub [/events](https://docs.github.com/en/rest/activity/events) API.
+
+- No filter result same as GitHub [/events](https://docs.github.com/en/rest/activity/events) API.
+- With filter result will return a map, such as:
+    
+    Params:
+
+    ```json
+    {
+        "samplingRate": 1,
+        "filter": [
+            "id", "type", "actor.login", "actor.avatar_url", "payload.push_id", "payload.commits"
+        ]
+    }
+    ```
+
+    Result:
+
+    ```json
+    {
+        "actor.avatar_url": "https://avatars.githubusercontent.com/u/48717?",
+        "actor.login": "emanuelef",
+        "id": "23454805798",
+        "payload.commits": null,
+        "payload.push_id": 0,
+        "type": "WatchEvent"
+    }
+    ```
 
 ### Loop
 
