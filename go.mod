@@ -5,10 +5,13 @@ go 1.18
 require (
 	github.com/apache/pulsar-client-go v0.8.1
 	github.com/go-redis/redis/v9 v9.0.0-beta.2
+	github.com/google/go-github/v45 v45.2.0
+	github.com/gorilla/websocket v1.5.0
 	github.com/pingcap/log v1.1.0
 	github.com/spf13/viper v1.12.0
 	go.uber.org/atomic v1.9.0
 	go.uber.org/zap v1.21.0
+	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5
 )
 
 require (
@@ -30,7 +33,7 @@ require (
 	github.com/golang-jwt/jwt v3.2.2+incompatible // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/golang/snappy v0.0.3 // indirect
-	github.com/gorilla/websocket v1.5.0 // indirect
+	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/gsterjov/go-libsecret v0.0.0-20161001094733-a6f4afe4910c // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/keybase/go-keychain v0.0.0-20190712205309-48d3d31d256d // indirect
@@ -62,7 +65,6 @@ require (
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/crypto v0.0.0-20220411220226-7b82a4e95df4 // indirect
 	golang.org/x/net v0.0.0-20220520000938-2e3eb7b945c2 // indirect
-	golang.org/x/oauth2 v0.0.0-20220411215720-9780585627b5 // indirect
 	golang.org/x/sys v0.0.0-20220520151302-bc2c85ada10a // indirect
 	golang.org/x/term v0.0.0-20210927222741-03fcf44c2211 // indirect
 	golang.org/x/text v0.3.7 // indirect

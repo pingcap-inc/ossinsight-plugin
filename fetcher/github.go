@@ -15,76 +15,32 @@
 package fetcher
 
 import (
+    "context"
     "encoding/json"
     "fmt"
+    "github.com/google/go-github/v45/github"
     "github.com/pingcap-inc/ossinsight-plugin/config"
     "github.com/pingcap-inc/ossinsight-plugin/logger"
     "github.com/pingcap-inc/ossinsight-plugin/mq"
     "github.com/pingcap-inc/ossinsight-plugin/redis"
     "go.uber.org/atomic"
-    "io/ioutil"
-    "net/http"
+    "golang.org/x/oauth2"
+    "sync"
     "time"
 
     "go.uber.org/zap"
 )
 
-var currentTokenIndex = atomic.NewInt64(0)
+var (
+    // currentClientIndex round-robin index for client
+    currentClientIndex = atomic.NewInt64(0)
+    // githubClientList create client by each token
+    githubClientList []*github.Client
+    // initClientOnce create client once
+    initClientOnce sync.Once
+)
 
-func FetchJson(size int) ([]byte, error) {
-    req, err := http.NewRequest("GET", fmt.Sprintf("https://api.github.com/events?per_page=%d", size), nil)
-    if err != nil {
-        logger.Error("create http get request error", zap.Error(err))
-        return nil, err
-    }
-
-    token, err := getToken()
-    if err != nil {
-        logger.Error("get token error", zap.Error(err))
-        return nil, err
-    }
-
-    req.Header.Set("Accept", "application/vnd.github+json")
-    req.Header.Set("Authorization", "token "+token)
-
-    timeout := config.GetReadonlyConfig().Github.Loop.Timeout
-
-    client := http.Client{
-        Timeout: time.Duration(timeout) * time.Millisecond,
-    }
-
-    resp, err := client.Do(req)
-    if err != nil {
-        logger.Error("get events http request error", zap.Error(err))
-        return nil, err
-    }
-    defer resp.Body.Close()
-    body, err := ioutil.ReadAll(resp.Body)
-    if err != nil {
-        logger.Error("get events http request response code not 200", zap.Int("code", resp.StatusCode))
-        return nil, err
-    }
-
-    return body, err
-}
-
-func FetchEvents(size int) ([]Event, error) {
-    payload, err := FetchJson(size)
-    if err != nil {
-        logger.Error("fetch json error", zap.Error(err))
-        return nil, err
-    }
-
-    var events []Event
-    err = json.Unmarshal(payload, &events)
-    if err != nil {
-        logger.Error("events unmarshal error", zap.Error(err))
-        return nil, err
-    }
-
-    return events, nil
-}
-
+// InitLoop create loop
 func InitLoop() {
     readonlyConfig := config.GetReadonlyConfig()
     loopBreak := readonlyConfig.Github.Loop.Break
@@ -99,14 +55,19 @@ func InitLoop() {
             }
 
             for _, event := range events {
-                exists, err := redis.ExistsAndSet(event.ID)
+                if event.ID == nil {
+                    logger.Error("event id not exist")
+                    continue
+                }
+
+                exists, err := redis.ExistsAndSet(*event.ID)
                 if err != nil {
                     logger.Error("redis request error", zap.Error(err))
                     continue
                 }
 
                 if exists {
-                    logger.Debug("event already exists, skip it", zap.String("id", event.ID))
+                    logger.Debug("event already exists, skip it", zap.String("id", *event.ID))
                     continue
                 }
 
@@ -126,12 +87,47 @@ func InitLoop() {
     }
 }
 
-// getToken get config tokens by round-robin, this function is concurrent safe
-func getToken() (string, error) {
-    tokens := config.GetReadonlyConfig().Github.Tokens
-    if len(tokens) == 0 {
-        return "", fmt.Errorf("github token empty, please config it")
+// FetchEvents fetch GitHub events
+func FetchEvents(perPage int) ([]*github.Event, error) {
+    client, err := getClient()
+    if err != nil {
+        logger.Error("get github client error", zap.Error(err))
+        return nil, err
     }
 
-    return tokens[int(currentTokenIndex.Add(1))%len(tokens)], nil
+    if client == nil {
+        logger.Error("github client is nil")
+        return nil, fmt.Errorf("github client is nil")
+    }
+
+    events, _, err := client.Activity.ListEvents(
+        context.Background(), &github.ListOptions{PerPage: perPage})
+
+    if err != nil {
+        logger.Error("request github events API error", zap.Error(err))
+        return nil, err
+    }
+
+    return events, nil
+}
+
+// getClient get client by round-robin, this function is concurrent safe
+func getClient() (*github.Client, error) {
+    initClientOnce.Do(createClients)
+
+    currentCallNum := int(currentClientIndex.Add(1))
+    return githubClientList[currentCallNum%len(githubClientList)], nil
+}
+
+func createClients() {
+    tokens := config.GetReadonlyConfig().Github.Tokens
+
+    for i := range tokens {
+        staticTokenSource := oauth2.StaticTokenSource(
+            &oauth2.Token{AccessToken: tokens[i]},
+        )
+        tc := oauth2.NewClient(context.Background(), staticTokenSource)
+
+        githubClientList = append(githubClientList, github.NewClient(tc))
+    }
 }

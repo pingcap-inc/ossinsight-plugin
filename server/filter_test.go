@@ -17,13 +17,13 @@ package main
 import (
     "encoding/json"
     "fmt"
-    "github.com/pingcap-inc/ossinsight-plugin/fetcher"
+    "github.com/google/go-github/v45/github"
     "testing"
 )
 
 func TestGetFieldToMap(t *testing.T) {
     filter := []string{"id", "type", "actor.login", "actor.avatar_url", "payload.push_id", "payload.commits"}
-    event := fetcher.Event{}
+    event := github.Event{}
     msg, _ := json.Marshal(event)
     fmt.Println(FilterMessageToMap(msg, filter))
 }

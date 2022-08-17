@@ -15,9 +15,9 @@
 package main
 
 import (
+    "github.com/google/go-github/v45/github"
     "github.com/gorilla/websocket"
     "github.com/pingcap-inc/ossinsight-plugin/config"
-    "github.com/pingcap-inc/ossinsight-plugin/fetcher"
     "github.com/pingcap-inc/ossinsight-plugin/logger"
     "go.uber.org/zap"
     "io"
@@ -52,16 +52,16 @@ func createWebsocket() {
     logger.Info("websocket start", zap.Int("port", port))
 }
 
-func remain(msg fetcher.Event, eventType, repoName, userName string) bool {
-    if len(eventType) > 0 && msg.Type != eventType {
+func remain(msg github.Event, eventType, repoName, userName string) bool {
+    if len(eventType) > 0 && msg.Type != nil && *msg.Type != eventType {
         return false
     }
 
-    if len(repoName) > 0 && msg.Repo.Name != repoName {
+    if len(repoName) > 0 && msg.Repo != nil && msg.Repo.Name != nil && *msg.Repo.Name != repoName {
         return false
     }
 
-    if len(userName) > 0 && msg.Actor.Login != userName {
+    if len(userName) > 0 && msg.Actor.Login != nil && *msg.Actor.Login != userName {
         return false
     }
 

@@ -16,8 +16,8 @@ package main
 
 import (
     "encoding/json"
+    "github.com/google/go-github/v45/github"
     "github.com/gorilla/websocket"
-    "github.com/pingcap-inc/ossinsight-plugin/fetcher"
     "github.com/pingcap-inc/ossinsight-plugin/logger"
     "go.uber.org/zap"
     "math/rand"
@@ -35,8 +35,8 @@ type LoopConfig struct {
 }
 
 type LoopResult struct {
-    MsgList []fetcher.Event `json:"msgList"`
-    TypeMap map[string]int  `json:"typeMap"`
+    MsgList []github.Event `json:"msgList"`
+    TypeMap map[string]int `json:"typeMap"`
 }
 
 func loopHandler(w http.ResponseWriter, r *http.Request, upgrader *websocket.Upgrader) {
@@ -57,14 +57,14 @@ func loopHandler(w http.ResponseWriter, r *http.Request, upgrader *websocket.Upg
 func writeLoopHandler(name string, connection *websocket.Conn, configChan chan LoopConfig) {
     loopConfig := <-configChan
 
-    listener := make(chan fetcher.Event)
+    listener := make(chan github.Event)
     err := ListenerRegister(name, listener)
     if err != nil {
         logger.Error("listener register error", zap.Error(err))
         return
     }
 
-    var msgList []fetcher.Event
+    var msgList []github.Event
     go func() {
         for {
             msg := <-listener
@@ -79,11 +79,16 @@ func writeLoopHandler(name string, connection *websocket.Conn, configChan chan L
     for range time.Tick(time.Duration(loopConfig.LoopTime) * time.Millisecond) {
         typeMap := make(map[string]int)
         for _, msg := range msgList {
-            if _, exist := typeMap[msg.Type]; !exist {
-                typeMap[msg.Type] = 0
+            if msg.Type == nil {
+                logger.Error("message type not exist")
+                continue
             }
 
-            typeMap[msg.Type] = typeMap[msg.Type] + 1
+            if _, exist := typeMap[*msg.Type]; !exist {
+                typeMap[*msg.Type] = 0
+            }
+
+            typeMap[*msg.Type] = typeMap[*msg.Type] + 1
         }
 
         result := LoopResult{TypeMap: typeMap}
@@ -97,7 +102,7 @@ func writeLoopHandler(name string, connection *websocket.Conn, configChan chan L
             return
         }
 
-        msgList = []fetcher.Event{}
+        msgList = []github.Event{}
 
         err = connection.WriteMessage(websocket.TextMessage, data)
         if err != nil {
