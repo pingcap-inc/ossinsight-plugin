@@ -36,6 +36,7 @@ start:
 	pm2 start bin/ossinsight-plugin --name ossinsight-plugin
 
 restart:
+	git pull origin main
 	make build
 	pm2 restart ossinsight-plugin
 
