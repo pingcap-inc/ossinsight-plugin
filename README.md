@@ -116,6 +116,26 @@ Sampling message and return to client.
     }
     ```
 
+- If you want a list:
+
+    Params:
+
+    ```json
+    {
+        "samplingRate": 1,
+        "filter": [
+            "id", "type", "actor.login", "actor.avatar_url", "payload.push_id", "payload.commits"
+        ],
+        "returnType": "list"
+    }
+    ```
+
+    Result:
+
+    ```json
+    ["23497872154","IssueCommentEvent","yegusa","https://avatars.githubusercontent.com/u/1328499?",null,null]
+    ```
+
 ### Loop
 
 Return to client by fixed time.

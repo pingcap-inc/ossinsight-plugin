@@ -32,17 +32,27 @@ func FilterMessageToMap(msg []byte, filter []string) (map[string]interface{}, er
     result := make(map[string]interface{})
     for _, filterItem := range filter {
         currentNode := message
-        var currentValue interface{}
-        for _, level := range strings.Split(filterItem, ".") {
+        var foundValue interface{}
+        filterList := strings.Split(filterItem, ".")
+        for index, level := range filterList {
+            // find next level
             if value, exist := currentNode[level]; exist {
-                currentValue = value
-                if node, ok := value.(map[string]interface{}); ok {
-                    currentNode = node
+                if index != len(filterList)-1 {
+                    // found next
+                    if node, ok := value.(map[string]interface{}); ok {
+                        currentNode = node
+                    }
+                } else {
+                    // final round
+                    foundValue = value
                 }
+
+                // found item, go to next level directly
+                continue
             }
         }
 
-        result[filterItem] = currentValue
+        result[filterItem] = foundValue
     }
 
     return result, nil
@@ -59,17 +69,27 @@ func FilterMessageToList(msg []byte, filter []string) ([]interface{}, error) {
     var result []interface{}
     for _, filterItem := range filter {
         currentNode := message
-        var currentValue interface{}
-        for _, level := range strings.Split(filterItem, ".") {
+        var foundValue interface{}
+        filterList := strings.Split(filterItem, ".")
+        for index, level := range filterList {
+            // find next level
             if value, exist := currentNode[level]; exist {
-                currentValue = value
-                if node, ok := value.(map[string]interface{}); ok {
-                    currentNode = node
+                if index != len(filterList)-1 {
+                    // found next
+                    if node, ok := value.(map[string]interface{}); ok {
+                        currentNode = node
+                    }
+                } else {
+                    // final round
+                    foundValue = value
                 }
+
+                // found item, go to next level directly
+                continue
             }
         }
 
-        result = append(result, currentValue)
+        result = append(result, foundValue)
     }
 
     return result, nil
