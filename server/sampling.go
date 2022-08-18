@@ -33,6 +33,7 @@ type SamplingConfig struct {
     RepoName     string   `json:"repoName"`
     UserName     string   `json:"userName"`
     Filter       []string `json:"filter"`
+    ReturnType   string   `json:"returnType"`
 }
 
 func samplingHandler(w http.ResponseWriter, r *http.Request, upgrader *websocket.Upgrader) {
@@ -78,15 +79,9 @@ func writeSamplingHandler(name string, connection *websocket.Conn, configChan ch
 
                 if samplingConfig.Filter != nil && len(samplingConfig.Filter) != 0 {
                     // exist filter
-                    resultMap, err := FilterMessageToMap(data, samplingConfig.Filter)
+                    data, err = FilterMessageToByteArray(data, samplingConfig.Filter, samplingConfig.ReturnType)
                     if err != nil {
                         logger.Error("filter error", zap.Error(err))
-                        return
-                    }
-
-                    data, err = json.Marshal(resultMap)
-                    if err != nil {
-                        logger.Error("filtered message marshal error", zap.Error(err))
                         return
                     }
                 }
