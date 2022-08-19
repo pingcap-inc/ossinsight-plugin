@@ -15,14 +15,15 @@
 package redis
 
 import (
-    "context"
+	"context"
+	"time"
 )
 
 // ExistsAndSet judge this id exists or not
 // Using `setnx` to discern, and add an eventIDPrefix
 func ExistsAndSet(id string) (bool, error) {
-    initClient()
+	initClient()
 
-    doSet, err := client.SetNX(context.Background(), eventIDPrefix+id, "", 0).Result()
-    return !doSet, err
+	doSet, err := client.SetNX(context.Background(), eventIDPrefix+id, "", 12*time.Hour).Result()
+	return !doSet, err
 }
