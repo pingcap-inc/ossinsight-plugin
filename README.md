@@ -19,6 +19,7 @@
     server:
         port: 6000 # HTTP port
         health: "/health" # health check api name
+        syncEvent: "/sync-event" # event sync api name
 
     log:
         level: debug
@@ -49,6 +50,22 @@
             break: 1000 # github events fetch loop break (ms)
         tokens:
             - ghp_XXXXXXXXXXXXXXXXXXXXXXXXX # github read-only token
+   
+    tidb:
+        host: localhost # tidb host
+        port: 4000 # tidb port
+        user: root # tidb user
+        password: "" # tidb password
+        db: gharchive_dev # tidb database
+        sql: # some sql
+        eventsDaily: |
+            SELECT event_day, COUNT(*) AS events
+            FROM github_events ge
+            WHERE
+            type = 'PullRequestEvent'
+            AND event_year = YEAR(NOW())
+            GROUP BY event_day
+            ORDER BY event_day;
     ```
 
 5. Start by `./ossinsight-plugin`.
@@ -60,7 +77,31 @@
 - `Client` start to connect the API Endpoint by `RAW WebSocket` protocol.
 - `Server` will waiting `Client` to send params.
 - `Client` send params (API has different params struct).
+- `Server` will send a initial message by ***ONLY ONCE***.
 - `Server` will endless send message to `Client` until connection closed.
+
+### Initial Message
+
+The initial message will has `firstMessageTag` tag, and it will be true.
+
+E.g.:
+
+```json
+{
+    "firstMessageTag": true,
+    "eventMap": {
+        "2022-01-01": "159442",
+        "2022-01-02": "125248",
+        "2022-01-03": "300395",
+        "2022-01-04": "266838",
+        "2022-01-05": "252041",
+        "2022-01-06": "251290",
+        "2022-01-07": "274393",
+        "2022-01-08": "136320",
+        "2022-01-09": "133740"
+    }
+}
+```
 
 ### Sampling
 
