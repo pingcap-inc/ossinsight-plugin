@@ -15,15 +15,15 @@
 package fetcher
 
 import (
-    "fmt"
-    "testing"
+	"fmt"
+	"testing"
 )
 
 func TestFetchEvents(t *testing.T) {
-    events, err := FetchEvents(10)
-    if err != nil {
-        t.Error(err)
-    }
+	events, err := FetchEvents(10)
+	if err != nil {
+		t.Error(err)
+	}
 
-    fmt.Println(events)
+	fmt.Println(events)
 }

@@ -45,7 +45,11 @@ func createWebsocket() {
 	})
 
 	http.HandleFunc(readonlyConfig.Server.SyncEvent, func(w http.ResponseWriter, r *http.Request) {
-		syncEvent()
+		if err := syncEvent(); err != nil {
+			io.WriteString(w, err.Error())
+			return
+		}
+
 		io.WriteString(w, "OK")
 	})
 

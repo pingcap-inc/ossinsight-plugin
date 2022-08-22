@@ -79,4 +79,3 @@ type Pulsar struct {
 	Producer Producer `yaml:"producer"`
 	Consumer Consumer `yaml:"consumer"`
 }
-

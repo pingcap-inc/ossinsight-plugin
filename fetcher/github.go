@@ -86,7 +86,7 @@ func InitLoop() {
 
 				err = mq.Send(marshaledEvent, "")
 				if err != nil {
-					logger.Error("seq id parse error", zap.Error(err))
+					logger.Error("send message error", zap.Error(err))
 					continue
 				}
 			}

@@ -15,144 +15,144 @@
 package main
 
 import (
-    "encoding/json"
-    "github.com/google/go-github/v45/github"
-    "github.com/gorilla/websocket"
-    "github.com/pingcap-inc/ossinsight-plugin/logger"
-    "go.uber.org/zap"
-    "math/rand"
-    "net/http"
-    "strconv"
-    "time"
+	"encoding/json"
+	"github.com/google/go-github/v45/github"
+	"github.com/gorilla/websocket"
+	"github.com/pingcap-inc/ossinsight-plugin/logger"
+	"go.uber.org/zap"
+	"math/rand"
+	"net/http"
+	"strconv"
+	"time"
 )
 
 type LoopConfig struct {
-    LoopTime  int    `json:"loopTime"`
-    EventType string `json:"eventType"`
-    RepoName  string `json:"repoName"`
-    UserName  string `json:"userName"`
-    Detail    bool   `json:"detail"`
+	LoopTime  int    `json:"loopTime"`
+	EventType string `json:"eventType"`
+	RepoName  string `json:"repoName"`
+	UserName  string `json:"userName"`
+	Detail    bool   `json:"detail"`
 }
 
 type LoopResult struct {
-    MsgList []github.Event `json:"msgList"`
-    TypeMap map[string]int `json:"typeMap"`
+	MsgList []github.Event `json:"msgList"`
+	TypeMap map[string]int `json:"typeMap"`
 }
 
 func loopHandler(w http.ResponseWriter, r *http.Request, upgrader *websocket.Upgrader) {
-    connection, err := upgrader.Upgrade(w, r, nil)
-    if err != nil {
-        logger.Error("upgrade websocket error", zap.Error(err))
-        return
-    }
+	connection, err := upgrader.Upgrade(w, r, nil)
+	if err != nil {
+		logger.Error("upgrade websocket error", zap.Error(err))
+		return
+	}
 
-    name := strconv.FormatInt(time.Now().UnixNano(), 10) +
-        strconv.FormatInt(rand.Int63(), 10)
+	name := strconv.FormatInt(time.Now().UnixNano(), 10) +
+		strconv.FormatInt(rand.Int63(), 10)
 
-    configChan := make(chan LoopConfig)
-    go readLoopHandler(name, connection, configChan)
-    go writeLoopHandler(name, connection, configChan)
+	configChan := make(chan LoopConfig)
+	go readLoopHandler(name, connection, configChan)
+	go writeLoopHandler(name, connection, configChan)
 }
 
 func writeLoopHandler(name string, connection *websocket.Conn, configChan chan LoopConfig) {
-    loopConfig := <-configChan
+	loopConfig := <-configChan
 
-    err := writeFirstResponse(connection)
-    if err != nil {
-        logger.Error("write first response error", zap.Error(err))
-        return
-    }
+	err := writeFirstResponse(connection)
+	if err != nil {
+		logger.Error("write first response error", zap.Error(err))
+		return
+	}
 
-    listener := make(chan github.Event)
-    err = ListenerRegister(name, listener)
-    if err != nil {
-        logger.Error("listener register error", zap.Error(err))
-        return
-    }
+	listener := make(chan github.Event)
+	err = ListenerRegister(name, listener)
+	if err != nil {
+		logger.Error("listener register error", zap.Error(err))
+		return
+	}
 
-    var msgList []github.Event
-    go func() {
-        for {
-            msg := <-listener
-            if !remain(msg, loopConfig.EventType, loopConfig.RepoName, loopConfig.UserName) {
-                continue
-            }
+	var msgList []github.Event
+	go func() {
+		for {
+			msg := <-listener
+			if !remain(msg, loopConfig.EventType, loopConfig.RepoName, loopConfig.UserName) {
+				continue
+			}
 
-            msgList = append(msgList, msg)
-        }
-    }()
+			msgList = append(msgList, msg)
+		}
+	}()
 
-    for range time.Tick(time.Duration(loopConfig.LoopTime) * time.Millisecond) {
-        typeMap := make(map[string]int)
-        for _, msg := range msgList {
-            if msg.Type == nil {
-                logger.Error("message type not exist")
-                continue
-            }
+	for range time.Tick(time.Duration(loopConfig.LoopTime) * time.Millisecond) {
+		typeMap := make(map[string]int)
+		for _, msg := range msgList {
+			if msg.Type == nil {
+				logger.Error("message type not exist")
+				continue
+			}
 
-            if _, exist := typeMap[*msg.Type]; !exist {
-                typeMap[*msg.Type] = 0
-            }
+			if _, exist := typeMap[*msg.Type]; !exist {
+				typeMap[*msg.Type] = 0
+			}
 
-            typeMap[*msg.Type] = typeMap[*msg.Type] + 1
-        }
+			typeMap[*msg.Type] = typeMap[*msg.Type] + 1
+		}
 
-        result := LoopResult{TypeMap: typeMap}
-        if loopConfig.Detail {
-            result.MsgList = msgList
-        }
+		result := LoopResult{TypeMap: typeMap}
+		if loopConfig.Detail {
+			result.MsgList = msgList
+		}
 
-        data, err := json.Marshal(result)
-        if err != nil {
-            logger.Error("marshal error", zap.Error(err))
-            return
-        }
+		data, err := json.Marshal(result)
+		if err != nil {
+			logger.Error("marshal error", zap.Error(err))
+			return
+		}
 
-        msgList = []github.Event{}
+		msgList = []github.Event{}
 
-        err = connection.WriteMessage(websocket.TextMessage, data)
-        if err != nil {
-            logger.Error("write error", zap.Error(err))
-            return
-        }
-    }
+		err = connection.WriteMessage(websocket.TextMessage, data)
+		if err != nil {
+			logger.Error("write error", zap.Error(err))
+			return
+		}
+	}
 }
 
 func readLoopHandler(name string, connection *websocket.Conn, configChan chan LoopConfig) {
-    defer func() {
-        ListenerDelete(name)
-        connection.Close()
-    }()
+	defer func() {
+		ListenerDelete(name)
+		connection.Close()
+	}()
 
-    configSet := false
-    for {
-        msgType, msg, err := connection.ReadMessage()
-        if err != nil {
-            logger.Error("read message error", zap.Error(err))
-            return
-        }
+	configSet := false
+	for {
+		msgType, msg, err := connection.ReadMessage()
+		if err != nil {
+			logger.Error("read message error", zap.Error(err))
+			return
+		}
 
-        if msgType == websocket.TextMessage {
-            if configSet {
-                logger.Error("config already set")
-                continue
-            }
-            // Get Config
-            logger.Debug("got text message", zap.ByteString("msg", msg))
-            loopConfig := new(LoopConfig)
-            err = json.Unmarshal(msg, loopConfig)
-            if err != nil {
-                logger.Error("config parse error", zap.Error(err))
-                return
-            }
+		if msgType == websocket.TextMessage {
+			if configSet {
+				logger.Error("config already set")
+				continue
+			}
+			// Get Config
+			logger.Debug("got text message", zap.ByteString("msg", msg))
+			loopConfig := new(LoopConfig)
+			err = json.Unmarshal(msg, loopConfig)
+			if err != nil {
+				logger.Error("config parse error", zap.Error(err))
+				return
+			}
 
-            if loopConfig.LoopTime < 500 {
-                logger.Error("loop too fast", zap.Int("loop time", loopConfig.LoopTime))
-                return
-            }
+			if loopConfig.LoopTime < 500 {
+				logger.Error("loop too fast", zap.Int("loop time", loopConfig.LoopTime))
+				return
+			}
 
-            configSet = true
-            configChan <- *loopConfig
-        }
-    }
+			configSet = true
+			configChan <- *loopConfig
+		}
+	}
 }

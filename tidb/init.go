@@ -16,7 +16,7 @@ var (
 
 func createDB() {
 	tidbConfig := config.GetReadonlyConfig().Tidb
-	dsn := fmt.Sprintf("%s:%s(%s:%d)/%s?charset=utf8mb4",
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4",
 		tidbConfig.User, tidbConfig.Password, tidbConfig.Host, tidbConfig.Port, tidbConfig.Db)
 	db, err := sql.Open("mysql", dsn)
 	if err != nil {

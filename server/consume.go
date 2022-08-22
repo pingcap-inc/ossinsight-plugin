@@ -15,28 +15,28 @@
 package main
 
 import (
-    "encoding/json"
-    "github.com/apache/pulsar-client-go/pulsar"
-    "github.com/google/go-github/v45/github"
-    "github.com/pingcap-inc/ossinsight-plugin/logger"
-    "github.com/pingcap-inc/ossinsight-plugin/mq"
-    "go.uber.org/zap"
+	"encoding/json"
+	"github.com/apache/pulsar-client-go/pulsar"
+	"github.com/google/go-github/v45/github"
+	"github.com/pingcap-inc/ossinsight-plugin/logger"
+	"github.com/pingcap-inc/ossinsight-plugin/mq"
+	"go.uber.org/zap"
 )
 
 func startConsumeMessage() {
-    mq.StartConsume(func(message pulsar.Message) error {
-        payload := message.Payload()
+	mq.StartConsume(func(message pulsar.Message) error {
+		payload := message.Payload()
 
-        var event github.Event
-        err := json.Unmarshal(payload, &event)
-        if err != nil {
-            logger.Error("event unmarshal error", zap.Error(err))
-            // drop this message, or it will block whole topic
-            return nil
-        }
+		var event github.Event
+		err := json.Unmarshal(payload, &event)
+		if err != nil {
+			logger.Error("event unmarshal error", zap.Error(err))
+			// drop this message, or it will block whole topic
+			return nil
+		}
 
-        // dispatch event to all listeners
-        DispatchEvent(event)
-        return nil
-    })
+		// dispatch event to all listeners
+		DispatchEvent(event)
+		return nil
+	})
 }
