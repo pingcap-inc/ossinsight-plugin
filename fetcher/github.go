@@ -72,7 +72,7 @@ func InitLoop() {
 				}
 
 				// add calculator number
-				err = redis.ZSetIncrease()
+				err = redis.EventNumberIncrease()
 				if err != nil {
 					logger.Error("redis request error", zap.Error(err))
 					// continue for send message, calculator doesn't matter

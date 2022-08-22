@@ -14,7 +14,7 @@ func syncEvent() error {
 		return err
 	}
 
-	err = redis.ZSetUpsert(events)
+	err = redis.EventNumberHSet(events)
 	if err != nil {
 		logger.Error("set redis this year event error", zap.Error(err))
 		return err

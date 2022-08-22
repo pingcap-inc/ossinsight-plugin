@@ -22,7 +22,7 @@ import (
 
 const (
 	eventIDPrefix   = "eid_"
-	eventYearPrefix = "y_"
+	eventYearPrefix = "year_"
 )
 
 var (

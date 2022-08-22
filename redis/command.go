@@ -16,7 +16,6 @@ package redis
 
 import (
 	"context"
-	redisConnector "github.com/go-redis/redis/v9"
 	"github.com/pingcap-inc/ossinsight-plugin/logger"
 	"github.com/pingcap-inc/ossinsight-plugin/tidb"
 	"go.uber.org/zap"
@@ -33,59 +32,45 @@ func ExistsAndSet(id string) (bool, error) {
 	return !doSet, err
 }
 
-func ZSetUpsert(events []tidb.Event) error {
+func EventNumberHSet(events []tidb.Event) error {
 	initClient()
 
-	zSetKey := eventYearPrefix + strconv.Itoa(time.Now().Year())
+	hashKey := eventYearPrefix + strconv.Itoa(time.Now().Year())
 
-	members := make([]redisConnector.Z, len(events), len(events))
-	for i, event := range events {
-		members[i] = redisConnector.Z{
-			Score:  float64(event.Events),
-			Member: event.EventDay,
-		}
+	eventMap := make(map[string]interface{})
+	for _, event := range events {
+		eventMap[event.EventDay] = event.Events
 	}
 
-	result := client.ZAdd(context.Background(), zSetKey, members...)
+	result := client.HSet(context.Background(), hashKey, eventMap)
 	if result.Err() != nil {
-		logger.Error("sorted set upsert error", zap.Error(result.Err()))
+		logger.Error("hash upsert error", zap.Error(result.Err()))
 		return result.Err()
 	}
 
 	return nil
 }
 
-func ZSetGetAll() ([]tidb.Event, error) {
+func EventNumberGetThisYear() (map[string]string, error) {
 	initClient()
 
-	zSetKey := eventYearPrefix + strconv.Itoa(time.Now().Year())
-	result := client.ZRangeWithScores(context.Background(), zSetKey, 0, -1)
+	hashKey := eventYearPrefix + strconv.Itoa(time.Now().Year())
+	result := client.HGetAll(context.Background(), hashKey)
 	if result.Err() != nil {
-		logger.Error("get all sorted set with score error", zap.Error(result.Err()))
+		logger.Error("get all set error", zap.Error(result.Err()))
 		return nil, result.Err()
 	}
 
-	members := result.Val()
-	events := make([]tidb.Event, len(members), len(members))
-	for i, member := range members {
-		if stringMember, memberIsString := member.Member.(string); memberIsString {
-			events[i] = tidb.Event{
-				EventDay: stringMember,
-				Events:   int(member.Score),
-			}
-		}
-	}
-
-	return events, nil
+	return result.Val(), nil
 }
 
-func ZSetIncrease() error {
+func EventNumberIncrease() error {
 	initClient()
 
-	zSetKey := eventYearPrefix + strconv.Itoa(time.Now().Year())
-	result := client.ZIncrBy(context.Background(), zSetKey, 1, time.Now().Format("2006-01-02"))
+	hashKey := eventYearPrefix + strconv.Itoa(time.Now().Year())
+	result := client.HIncrBy(context.Background(), hashKey, time.Now().Format("2006-01-02"), 1)
 	if result.Err() != nil {
-		logger.Error("sorted set member increase score error", zap.Error(result.Err()))
+		logger.Error("event number increase error", zap.Error(result.Err()))
 		return result.Err()
 	}
 
