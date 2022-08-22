@@ -15,18 +15,22 @@
 package main
 
 import (
-    "github.com/pingcap-inc/ossinsight-plugin/fetcher"
+	"github.com/pingcap-inc/ossinsight-plugin/fetcher"
+	"time"
 )
 
 func main() {
-    // start to fetch GitHub events and send to message queue
-    go fetcher.InitLoop()
+	// Fixed time zone
+	time.Local = time.UTC
 
-    // start to consume message
-    startConsumeMessage()
+	// start to fetch GitHub events and send to message queue
+	go fetcher.InitLoop()
 
-    createWebsocket()
+	// start to consume message
+	startConsumeMessage()
 
-    wait := make(chan int)
-    <-wait
+	createWebsocket()
+
+	wait := make(chan int)
+	<-wait
 }

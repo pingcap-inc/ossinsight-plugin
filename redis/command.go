@@ -16,6 +16,11 @@ package redis
 
 import (
 	"context"
+	redisConnector "github.com/go-redis/redis/v9"
+	"github.com/pingcap-inc/ossinsight-plugin/logger"
+	"github.com/pingcap-inc/ossinsight-plugin/tidb"
+	"go.uber.org/zap"
+	"strconv"
 	"time"
 )
 
@@ -26,4 +31,63 @@ func ExistsAndSet(id string) (bool, error) {
 
 	doSet, err := client.SetNX(context.Background(), eventIDPrefix+id, "", 12*time.Hour).Result()
 	return !doSet, err
+}
+
+func ZSetUpsert(events []tidb.Event) error {
+	initClient()
+
+	zSetKey := eventYearPrefix + strconv.Itoa(time.Now().Year())
+
+	members := make([]redisConnector.Z, len(events), len(events))
+	for i, event := range events {
+		members[i] = redisConnector.Z{
+			Score:  float64(event.Events),
+			Member: event.EventDay,
+		}
+	}
+
+	result := client.ZAdd(context.Background(), zSetKey, members...)
+	if result.Err() != nil {
+		logger.Error("sorted set upsert error", zap.Error(result.Err()))
+		return result.Err()
+	}
+
+	return nil
+}
+
+func ZSetGetAll() ([]tidb.Event, error) {
+	initClient()
+
+	zSetKey := eventYearPrefix + strconv.Itoa(time.Now().Year())
+	result := client.ZRangeWithScores(context.Background(), zSetKey, 0, -1)
+	if result.Err() != nil {
+		logger.Error("get all sorted set with score error", zap.Error(result.Err()))
+		return nil, result.Err()
+	}
+
+	members := result.Val()
+	events := make([]tidb.Event, len(members), len(members))
+	for i, member := range members {
+		if stringMember, memberIsString := member.Member.(string); memberIsString {
+			events[i] = tidb.Event{
+				EventDay: stringMember,
+				Events:   int(member.Score),
+			}
+		}
+	}
+
+	return events, nil
+}
+
+func ZSetIncrease() error {
+	initClient()
+
+	zSetKey := eventYearPrefix + strconv.Itoa(time.Now().Year())
+	result := client.ZIncrBy(context.Background(), zSetKey, 1, time.Now().Format("2006-01-02"))
+	if result.Err() != nil {
+		logger.Error("sorted set member increase score error", zap.Error(result.Err()))
+		return result.Err()
+	}
+
+	return nil
 }

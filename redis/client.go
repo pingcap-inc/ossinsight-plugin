@@ -15,27 +15,28 @@
 package redis
 
 import (
-    redisConnector "github.com/go-redis/redis/v9"
-    "github.com/pingcap-inc/ossinsight-plugin/config"
-    "sync"
+	redisConnector "github.com/go-redis/redis/v9"
+	"github.com/pingcap-inc/ossinsight-plugin/config"
+	"sync"
 )
 
 const (
-    eventIDPrefix = "eid_"
+	eventIDPrefix   = "eid_"
+	eventYearPrefix = "y_"
 )
 
 var (
-    client        *redisConnector.Client
-    redisInitOnce sync.Once
+	client        *redisConnector.Client
+	redisInitOnce sync.Once
 )
 
 func initClient() {
-    redisInitOnce.Do(func() {
-        readonlyConfig := config.GetReadonlyConfig()
-        client = redisConnector.NewClient(&redisConnector.Options{
-            Addr:     readonlyConfig.Redis.Host,
-            Password: readonlyConfig.Redis.Password,
-            DB:       readonlyConfig.Redis.Db,
-        })
-    })
+	redisInitOnce.Do(func() {
+		readonlyConfig := config.GetReadonlyConfig()
+		client = redisConnector.NewClient(&redisConnector.Options{
+			Addr:     readonlyConfig.Redis.Host,
+			Password: readonlyConfig.Redis.Password,
+			DB:       readonlyConfig.Redis.Db,
+		})
+	})
 }

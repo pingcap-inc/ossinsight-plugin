@@ -54,8 +54,14 @@ func samplingHandler(w http.ResponseWriter, r *http.Request, upgrader *websocket
 func writeSamplingHandler(name string, connection *websocket.Conn, configChan chan SamplingConfig) {
     samplingConfig := <-configChan
 
+    err := writeFirstResponse(connection)
+    if err != nil {
+        logger.Error("write first response error", zap.Error(err))
+        return
+    }
+
     listener := make(chan github.Event)
-    err := ListenerRegister(name, listener)
+    err = ListenerRegister(name, listener)
     if err != nil {
         logger.Error("listener register error", zap.Error(err))
         return

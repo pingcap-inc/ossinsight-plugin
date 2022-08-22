@@ -5,6 +5,7 @@ go 1.18
 require (
 	github.com/apache/pulsar-client-go v0.8.1
 	github.com/go-redis/redis/v9 v9.0.0-beta.2
+	github.com/go-sql-driver/mysql v1.6.0
 	github.com/google/go-github/v45 v45.2.0
 	github.com/gorilla/websocket v1.5.0
 	github.com/pingcap/log v1.1.0

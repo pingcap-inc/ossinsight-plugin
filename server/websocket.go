@@ -15,55 +15,60 @@
 package main
 
 import (
-    "github.com/google/go-github/v45/github"
-    "github.com/gorilla/websocket"
-    "github.com/pingcap-inc/ossinsight-plugin/config"
-    "github.com/pingcap-inc/ossinsight-plugin/logger"
-    "go.uber.org/zap"
-    "io"
-    "net/http"
-    "strconv"
+	"github.com/google/go-github/v45/github"
+	"github.com/gorilla/websocket"
+	"github.com/pingcap-inc/ossinsight-plugin/config"
+	"github.com/pingcap-inc/ossinsight-plugin/logger"
+	"go.uber.org/zap"
+	"io"
+	"net/http"
+	"strconv"
 )
 
 func createWebsocket() {
-    readonlyConfig := config.GetReadonlyConfig()
+	readonlyConfig := config.GetReadonlyConfig()
 
-    upgrader := &websocket.Upgrader{
-        CheckOrigin: func(r *http.Request) bool { return true },
-    }
+	upgrader := &websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool { return true },
+	}
 
-    http.HandleFunc("/loop", func(w http.ResponseWriter, r *http.Request) {
-        loopHandler(w, r, upgrader)
-    })
+	http.HandleFunc("/loop", func(w http.ResponseWriter, r *http.Request) {
+		loopHandler(w, r, upgrader)
+	})
 
-    http.HandleFunc("/sampling", func(w http.ResponseWriter, r *http.Request) {
-        samplingHandler(w, r, upgrader)
-    })
+	http.HandleFunc("/sampling", func(w http.ResponseWriter, r *http.Request) {
+		samplingHandler(w, r, upgrader)
+	})
 
-    http.HandleFunc(readonlyConfig.Server.Health, func(w http.ResponseWriter, r *http.Request) {
-        io.WriteString(w, "OK")
-    })
+	http.HandleFunc(readonlyConfig.Server.Health, func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, "OK")
+	})
 
-    port := readonlyConfig.Server.Port
-    err := http.ListenAndServe(":"+strconv.Itoa(port), nil)
-    if err != nil {
-        logger.Fatal("websocket server start error", zap.Error(err))
-    }
-    logger.Info("websocket start", zap.Int("port", port))
+	http.HandleFunc(readonlyConfig.Server.SyncEvent, func(w http.ResponseWriter, r *http.Request) {
+		syncEvent()
+		io.WriteString(w, "OK")
+	})
+
+	port := readonlyConfig.Server.Port
+	err := http.ListenAndServe(":"+strconv.Itoa(port), nil)
+	if err != nil {
+		logger.Fatal("websocket server start error", zap.Error(err))
+	}
+	logger.Info("websocket start", zap.Int("port", port))
 }
 
 func remain(msg github.Event, eventType, repoName, userName string) bool {
-    if len(eventType) > 0 && msg.Type != nil && *msg.Type != eventType {
-        return false
-    }
+	if len(eventType) > 0 && msg.Type != nil && *msg.Type != eventType {
+		return false
+	}
 
-    if len(repoName) > 0 && msg.Repo != nil && msg.Repo.Name != nil && *msg.Repo.Name != repoName {
-        return false
-    }
+	if len(repoName) > 0 && msg.Repo != nil && msg.Repo.Name != nil && *msg.Repo.Name != repoName {
+		return false
+	}
 
-    if len(userName) > 0 && msg.Actor.Login != nil && *msg.Actor.Login != userName {
-        return false
-    }
+	if len(userName) > 0 && msg.Actor.Login != nil && *msg.Actor.Login != userName {
+		return false
+	}
 
-    return true
+	return true
 }
