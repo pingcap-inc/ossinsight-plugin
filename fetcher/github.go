@@ -72,10 +72,12 @@ func InitLoop() {
 				}
 
 				// add calculator number
-				err = redis.EventNumberIncrease()
-				if err != nil {
-					logger.Error("redis request error", zap.Error(err))
-					// continue for send message, calculator doesn't matter
+				if event.Type != nil && *event.Type == "PullRequestEvent" {
+					err = redis.EventNumberIncrease()
+					if err != nil {
+						logger.Error("redis request error", zap.Error(err))
+						// continue for send message, calculator doesn't matter
+					}
 				}
 
 				marshaledEvent, err := json.Marshal(event)
