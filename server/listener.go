@@ -16,34 +16,34 @@ package main
 
 import (
 	"fmt"
-	"github.com/google/go-github/v45/github"
+	"github.com/pingcap-inc/ossinsight-plugin/fetcher"
 	"github.com/pingcap-inc/ossinsight-plugin/logger"
 	"go.uber.org/zap"
 )
 
-var listenerMap = make(map[string]chan github.Event)
+var listenerMap = make(map[string]chan fetcher.Msg)
 
-func ListenerRegister(key string, listener chan github.Event) error {
-	logger.Debug("register listener", zap.String("key", key))
-	if listener == nil {
-		return fmt.Errorf("listener is nil, please ckeck it")
-	}
+func ListenerRegister(key string, listener chan fetcher.Msg) error {
+    logger.Debug("register listener", zap.String("key", key))
+    if listener == nil {
+        return fmt.Errorf("listener is nil, please ckeck it")
+    }
 
-	listenerMap[key] = listener
+    listenerMap[key] = listener
 
-	return nil
+    return nil
 }
 
 func ListenerDelete(key string) {
-	logger.Debug("delete listener", zap.String("key", key))
-	delete(listenerMap, key)
+    logger.Debug("delete listener", zap.String("key", key))
+    delete(listenerMap, key)
 }
 
-func DispatchEvent(event github.Event) {
-	// use another goroutine to prevent block listener has blocked channel
-	go func() {
-		for key := range listenerMap {
-			listenerMap[key] <- event
-		}
-	}()
+func DispatchEvent(event fetcher.Msg) {
+    // use another goroutine to prevent block listener has blocked channel
+    go func() {
+        for key := range listenerMap {
+            listenerMap[key] <- event
+        }
+    }()
 }

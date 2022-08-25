@@ -11,6 +11,8 @@ import (
 type FirstResponse struct {
 	FirstMessageTag bool              `json:"firstMessageTag"`
 	EventMap        map[string]string `json:"eventMap"`
+	YearCountMap    map[string]string `json:"yearCountMap"`
+	DayCountMap     map[string]string `json:"dayCountMap"`
 }
 
 func writeFirstResponse(connection *websocket.Conn) error {
@@ -20,9 +22,23 @@ func writeFirstResponse(connection *websocket.Conn) error {
 		return err
 	}
 
+	yearCountMap, err := redis.GetThisYearEventCount()
+	if err != nil {
+		logger.Error("redis get this year count map error", zap.Error(err))
+		return err
+	}
+
+	dayCountMap, err := redis.GetTodayEventCount()
+	if err != nil {
+		logger.Error("redis get today count map error", zap.Error(err))
+		return err
+	}
+
 	response := FirstResponse{
 		FirstMessageTag: true,
 		EventMap:        eventMap,
+		YearCountMap:    yearCountMap,
+		DayCountMap:     dayCountMap,
 	}
 
 	payload, _ := json.Marshal(response)

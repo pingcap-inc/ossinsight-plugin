@@ -16,8 +16,8 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/google/go-github/v45/github"
 	"github.com/gorilla/websocket"
+	"github.com/pingcap-inc/ossinsight-plugin/fetcher"
 	"github.com/pingcap-inc/ossinsight-plugin/logger"
 	"go.uber.org/zap"
 	"math/rand"
@@ -35,7 +35,7 @@ type LoopConfig struct {
 }
 
 type LoopResult struct {
-	MsgList []github.Event `json:"msgList"`
+	MsgList []fetcher.Msg  `json:"msgList"`
 	TypeMap map[string]int `json:"typeMap"`
 }
 
@@ -63,14 +63,14 @@ func writeLoopHandler(name string, connection *websocket.Conn, configChan chan L
 		return
 	}
 
-	listener := make(chan github.Event)
+	listener := make(chan fetcher.Msg)
 	err = ListenerRegister(name, listener)
 	if err != nil {
 		logger.Error("listener register error", zap.Error(err))
 		return
 	}
 
-	var msgList []github.Event
+	var msgList []fetcher.Msg
 	go func() {
 		for {
 			msg := <-listener
@@ -85,16 +85,16 @@ func writeLoopHandler(name string, connection *websocket.Conn, configChan chan L
 	for range time.Tick(time.Duration(loopConfig.LoopTime) * time.Millisecond) {
 		typeMap := make(map[string]int)
 		for _, msg := range msgList {
-			if msg.Type == nil {
+			if msg.Event.Type == nil {
 				logger.Error("message type not exist")
 				continue
 			}
 
-			if _, exist := typeMap[*msg.Type]; !exist {
-				typeMap[*msg.Type] = 0
+			if _, exist := typeMap[*msg.Event.Type]; !exist {
+				typeMap[*msg.Event.Type] = 0
 			}
 
-			typeMap[*msg.Type] = typeMap[*msg.Type] + 1
+			typeMap[*msg.Event.Type] = typeMap[*msg.Event.Type] + 1
 		}
 
 		result := LoopResult{TypeMap: typeMap}
@@ -108,7 +108,7 @@ func writeLoopHandler(name string, connection *websocket.Conn, configChan chan L
 			return
 		}
 
-		msgList = []github.Event{}
+		msgList = []fetcher.Msg{}
 
 		err = connection.WriteMessage(websocket.TextMessage, data)
 		if err != nil {

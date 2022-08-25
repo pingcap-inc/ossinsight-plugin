@@ -16,6 +16,7 @@ package main
 
 import (
 	"github.com/pingcap-inc/ossinsight-plugin/fetcher"
+	"github.com/pingcap-inc/ossinsight-plugin/interval"
 	"time"
 )
 
@@ -26,6 +27,8 @@ func main() {
 	// start to fetch GitHub events and send to message queue
 	go fetcher.InitLoop()
 
+	go interval.InitInterval()
+	
 	// start to consume message
 	startConsumeMessage()
 

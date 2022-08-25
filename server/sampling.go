@@ -16,8 +16,8 @@ package main
 
 import (
 	"encoding/json"
-	"github.com/google/go-github/v45/github"
 	"github.com/gorilla/websocket"
+	"github.com/pingcap-inc/ossinsight-plugin/fetcher"
 	"github.com/pingcap-inc/ossinsight-plugin/logger"
 	"go.uber.org/zap"
 	"log"
@@ -60,7 +60,7 @@ func writeSamplingHandler(name string, connection *websocket.Conn, configChan ch
 		return
 	}
 
-	listener := make(chan github.Event)
+	listener := make(chan fetcher.Msg)
 	err = ListenerRegister(name, listener)
 	if err != nil {
 		logger.Error("listener register error", zap.Error(err))

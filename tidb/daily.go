@@ -6,12 +6,12 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-type Event struct {
+type DailyEvent struct {
 	EventDay string `json:"eventDay"`
 	Events   int    `json:"events"`
 }
 
-func QueryThisYearEvent() ([]Event, error) {
+func QueryThisYearDailyEvent() ([]DailyEvent, error) {
 	initDBOnce.Do(createDB)
 
 	tidbConfig := config.GetReadonlyConfig().Tidb
@@ -21,9 +21,9 @@ func QueryThisYearEvent() ([]Event, error) {
 	}
 	defer rows.Close()
 
-	var result []Event
+	var result []DailyEvent
 	for rows.Next() {
-		event := Event{}
+		event := DailyEvent{}
 		err = rows.Scan(&event.EventDay, &event.Events)
 		if err == nil {
 			result = append(result, event)

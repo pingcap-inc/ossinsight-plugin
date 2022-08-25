@@ -1,4 +1,4 @@
-package main
+package interval
 
 import (
 	"github.com/pingcap-inc/ossinsight-plugin/logger"
@@ -7,8 +7,8 @@ import (
 	"go.uber.org/zap"
 )
 
-func syncEvent() error {
-	events, err := tidb.QueryThisYearEvent()
+func dailySync() error {
+	events, err := tidb.QueryThisYearDailyEvent()
 	if err != nil {
 		logger.Error("query tidb this year event error", zap.Error(err))
 		return err

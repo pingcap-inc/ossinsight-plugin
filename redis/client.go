@@ -21,8 +21,19 @@ import (
 )
 
 const (
-	eventIDPrefix   = "eid_"
-	eventYearPrefix = "year_"
+	eventIDKey       = "event"
+	eventYearPrefix  = "year_"
+	eventDayPrefix   = "date_"
+	distinctPrefix   = "d_"
+	eventDailyPrefix = "daily_year_"
+	yearCountPrefix  = "year_count_"
+	dayCountPrefix   = "day_count_"
+)
+
+const (
+	CountDeveloperKey = "dev"
+	CountOpenKey      = "open"
+	CountMergeKey     = "merge"
 )
 
 var (
