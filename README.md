@@ -16,6 +16,9 @@
 4. Configure this file, and save to one of those path `./config.yaml`, `./config/config.yaml` or `../config/config.yaml` (relative path by binary file):
 
     ```yaml
+    api:
+        version: 2
+
     server:
         port: 6000 # HTTP port
         health: "/health" # health check api name
