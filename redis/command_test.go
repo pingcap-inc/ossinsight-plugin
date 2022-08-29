@@ -15,6 +15,7 @@
 package redis
 
 import (
+	"context"
 	"strconv"
 	"testing"
 	"time"
@@ -22,7 +23,7 @@ import (
 
 func TestExistsAndSet(t *testing.T) {
 	key := strconv.Itoa(time.Now().Nanosecond())
-	exist, err := ExistsAndSet(key)
+	exist, err := EventIDExists(key)
 	if err != nil {
 		t.Error(err)
 		return
@@ -33,7 +34,7 @@ func TestExistsAndSet(t *testing.T) {
 		return
 	}
 
-	exist, err = ExistsAndSet(key)
+	exist, err = EventIDExists(key)
 	if err != nil {
 		t.Error(err)
 		return
@@ -42,5 +43,33 @@ func TestExistsAndSet(t *testing.T) {
 	if !exist {
 		t.Errorf("%s should exists", key)
 		return
+	}
+}
+
+func TestHyperLogLogExists(t *testing.T) {
+	initClient()
+	client.Del(context.Background(), distinctPrefix+"test")
+	exists, err := HyperLogLogExists("test", "a")
+	if err != nil {
+		t.Errorf("add error")
+	}
+	if exists {
+		t.Errorf("not exist")
+	}
+
+	exists, err = HyperLogLogExists("test", "b")
+	if err != nil {
+		t.Errorf("add error")
+	}
+	if exists {
+		t.Errorf("not exist")
+	}
+
+	exists, err = HyperLogLogExists("test", "a")
+	if err != nil {
+		t.Errorf("add error")
+	}
+	if !exists {
+		t.Errorf("exist")
 	}
 }

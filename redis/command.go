@@ -23,19 +23,10 @@ import (
 	"time"
 )
 
-// ExistsAndSet judge this id exists or not
-// Using `setnx` to discern, and add an eventIDPrefix
-func ExistsAndSet(id string) (bool, error) {
+func EventNumberHSet(events []tidb.DailyEvent) error {
 	initClient()
 
-	doSet, err := client.SetNX(context.Background(), eventIDPrefix+id, "", 12*time.Hour).Result()
-	return !doSet, err
-}
-
-func EventNumberHSet(events []tidb.Event) error {
-	initClient()
-
-	hashKey := eventYearPrefix + strconv.Itoa(time.Now().Year())
+	hashKey := eventDailyPrefix + strconv.Itoa(time.Now().Year())
 
 	eventMap := make(map[string]interface{})
 	for _, event := range events {
@@ -52,10 +43,14 @@ func EventNumberHSet(events []tidb.Event) error {
 }
 
 func EventNumberGetThisYear() (map[string]string, error) {
+	hashKey := eventDailyPrefix + strconv.Itoa(time.Now().Year())
+	return HGetAll(hashKey)
+}
+
+func HGetAll(key string) (map[string]string, error) {
 	initClient()
 
-	hashKey := eventYearPrefix + strconv.Itoa(time.Now().Year())
-	result := client.HGetAll(context.Background(), hashKey)
+	result := client.HGetAll(context.Background(), key)
 	if result.Err() != nil {
 		logger.Error("get all set error", zap.Error(result.Err()))
 		return nil, result.Err()
@@ -67,7 +62,7 @@ func EventNumberGetThisYear() (map[string]string, error) {
 func EventNumberIncrease() error {
 	initClient()
 
-	hashKey := eventYearPrefix + strconv.Itoa(time.Now().Year())
+	hashKey := eventDailyPrefix + strconv.Itoa(time.Now().Year())
 	result := client.HIncrBy(context.Background(), hashKey, time.Now().Format("2006-01-02"), 1)
 	if result.Err() != nil {
 		logger.Error("event number increase error", zap.Error(result.Err()))

@@ -15,9 +15,9 @@
 package main
 
 import (
-	"github.com/google/go-github/v45/github"
 	"github.com/gorilla/websocket"
 	"github.com/pingcap-inc/ossinsight-plugin/config"
+	"github.com/pingcap-inc/ossinsight-plugin/fetcher"
 	"github.com/pingcap-inc/ossinsight-plugin/logger"
 	"go.uber.org/zap"
 	"io"
@@ -44,15 +44,6 @@ func createWebsocket() {
 		io.WriteString(w, "OK")
 	})
 
-	http.HandleFunc(readonlyConfig.Server.SyncEvent, func(w http.ResponseWriter, r *http.Request) {
-		if err := syncEvent(); err != nil {
-			io.WriteString(w, err.Error())
-			return
-		}
-
-		io.WriteString(w, "OK")
-	})
-
 	port := readonlyConfig.Server.Port
 	err := http.ListenAndServe(":"+strconv.Itoa(port), nil)
 	if err != nil {
@@ -61,16 +52,16 @@ func createWebsocket() {
 	logger.Info("websocket start", zap.Int("port", port))
 }
 
-func remain(msg github.Event, eventType, repoName, userName string) bool {
-	if len(eventType) > 0 && msg.Type != nil && *msg.Type != eventType {
+func remain(msg fetcher.Msg, eventType, repoName, userName string) bool {
+	if len(eventType) > 0 && msg.Event.Type != nil && *msg.Event.Type != eventType {
 		return false
 	}
 
-	if len(repoName) > 0 && msg.Repo != nil && msg.Repo.Name != nil && *msg.Repo.Name != repoName {
+	if len(repoName) > 0 && msg.Event.Repo != nil && msg.Event.Repo.Name != nil && *msg.Event.Repo.Name != repoName {
 		return false
 	}
 
-	if len(userName) > 0 && msg.Actor.Login != nil && *msg.Actor.Login != userName {
+	if len(userName) > 0 && msg.Event.Actor.Login != nil && *msg.Event.Actor.Login != userName {
 		return false
 	}
 

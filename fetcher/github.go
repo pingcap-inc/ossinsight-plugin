@@ -40,6 +40,11 @@ var (
 	initClientOnce sync.Once
 )
 
+type Msg struct {
+	Event   github.Event           `json:"event"`
+	Payload map[string]interface{} `json:"payload"`
+}
+
 // InitLoop create loop
 func InitLoop() {
 	readonlyConfig := config.GetReadonlyConfig()
@@ -60,7 +65,8 @@ func InitLoop() {
 					continue
 				}
 
-				exists, err := redis.ExistsAndSet(*event.ID)
+				// judge event exist
+				exists, err := redis.EventIDExists(*event.ID)
 				if err != nil {
 					logger.Error("redis request error", zap.Error(err))
 					continue
@@ -72,21 +78,25 @@ func InitLoop() {
 				}
 
 				// add calculator number
-				if event.Type != nil && *event.Type == "PullRequestEvent" {
-					err = redis.EventNumberIncrease()
-					if err != nil {
-						logger.Error("redis request error", zap.Error(err))
-						// continue for send message, calculator doesn't matter
-					}
-				}
+				pr, devDay, devYear, merge, open := redis.AddEventCount(*event)
 
-				marshaledEvent, err := json.Marshal(event)
+				msg := Msg{
+					Event: *event,
+					Payload: map[string]interface{}{
+						"pr":      boolean2int(pr),
+						"devDay":  boolean2int(devDay),
+						"devYear": boolean2int(devYear),
+						"merge":   boolean2int(merge),
+						"open":    boolean2int(open),
+					},
+				}
+				marshaledMsg, err := json.Marshal(msg)
 				if err != nil {
 					logger.Error("marshal event error", zap.Error(err))
 					continue
 				}
 
-				err = mq.Send(marshaledEvent, "")
+				err = mq.Send(marshaledMsg, "")
 				if err != nil {
 					logger.Error("send message error", zap.Error(err))
 					continue
@@ -94,6 +104,13 @@ func InitLoop() {
 			}
 		}()
 	}
+}
+
+func boolean2int(val bool) int {
+	if val {
+		return 1
+	}
+	return 0
 }
 
 // FetchEvents fetch GitHub events
