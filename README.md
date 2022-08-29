@@ -36,13 +36,13 @@
         host: pulsar+ssl://XXX.XXX.XXX:XXXX # pulsar host
         audience: XXX:XX:XXXXX:XXXXX:XXXX # pulsar audience
         keypath: /XXX/XXX/XXX.json # private key path, download form StreamNative cloud
-    producer:
-        topic: XXXXX # send topic name
-        retry: 3 # send message retry times
-    consumer:
-        topic: XXXXX # consume topic name
-        name: events-consumer # consumer name
-        concurrency: 5 # consumer numbers in a single ossinsight-plugin
+        producer:
+            topic: XXXXX # send topic name
+            retry: 3 # send message retry times
+        consumer:
+            topic: XXXXX # consume topic name
+            name: events-consumer # consumer name
+            concurrency: 5 # consumer numbers in a single ossinsight-plugin
 
     github:
         loop:
@@ -51,6 +51,13 @@
         tokens:
             - ghp_XXXXXXXXXXXXXXXXXXXXXXXXX # github read-only token
    
+    interval:
+        yearCount: 1m # year count fetch interval
+        dayCount: 1m # year count fetch interval
+        daily: 1m
+        retry: 3
+        retryWait: 10000 # ms
+
     tidb:
         host: localhost # tidb host
         port: 4000 # tidb port
@@ -66,6 +73,32 @@
             AND event_year = YEAR(NOW())
             GROUP BY event_day
             ORDER BY event_day;
+        prToday: |
+            SELECT action, COUNT(action) as event_num
+            FROM github_events
+            WHERE type = 'PullRequestEvent'
+            AND ((action = 'closed' AND pr_merged = true) OR action = 'opened')
+            AND event_day = DATE(NOW())
+            GROUP BY action, event_day;
+        prDeveloperToday: |
+            SELECT COUNT(DISTINCT actor_id) as actor_num
+            FROM github_events
+            WHERE type = 'PullRequestEvent'
+            AND ((action = 'closed' AND pr_merged = true) OR action = 'opened')
+            AND event_day = DATE(NOW())
+        prThisYear: |
+            SELECT action, COUNT(action) as event_num
+            FROM github_events
+            WHERE type = 'PullRequestEvent'
+            AND ((action = 'closed' AND pr_merged = true) OR action = 'opened')
+            AND event_year = YEAR(NOW())
+            GROUP BY action
+        prDeveloperThisYear: |
+            SELECT COUNT(DISTINCT actor_id) as actor_num
+            FROM github_events
+            WHERE type = 'PullRequestEvent'
+            AND ((action = 'closed' AND pr_merged = true) OR action = 'opened')
+            AND event_year = YEAR(NOW())
     ```
 
 5. Start by `./ossinsight-plugin`.
@@ -90,15 +123,27 @@ E.g.:
 {
     "firstMessageTag": true,
     "eventMap": {
-        "2022-01-01": "159442",
-        "2022-01-02": "125248",
-        "2022-01-03": "300395",
-        "2022-01-04": "266838",
-        "2022-01-05": "252041",
-        "2022-01-06": "251290",
-        "2022-01-07": "274393",
-        "2022-01-08": "136320",
-        "2022-01-09": "133740"
+        "2022-01-01": "34",
+        "2022-01-02": "41",
+        "2022-01-03": "100",
+        "2022-01-04": "322",
+        "2022-01-05": "326",
+        "2022-01-06": "391",
+        "2022-01-07": "279",
+        "2022-01-08": "120",
+        "2022-01-09": "39",
+        "2022-01-10": "331",
+        "2022-01-11": "355"
+    },
+    "yearCountMap": {
+        "dev": "2091",
+        "merge": "28225",
+        "open": "34078"
+    },
+    "dayCountMap": {
+        "dev": "2",
+        "merge": "65",
+        "open": "227"
     }
 }
 ```
@@ -129,8 +174,59 @@ Sampling message and return to client.
     }
     ```
 
+- Result (the `{event entity}` is same as [/events](https://docs.github.com/en/rest/activity/events) API):
 
-- No filter result same as GitHub [/events](https://docs.github.com/en/rest/activity/events) API.
+    ```json
+    {
+        "event": {event entity},
+        "payload": {
+            "devDay": 0,
+            "devYear": 0,
+            "merge": 0,
+            "open": 0,
+            "pr": 0
+        }
+    }
+    ```
+
+    E.g.:
+
+    ```json
+    {
+        "event": {
+            "type": "DeleteEvent",
+            "public": true,
+            "payload": {
+                "ref": "dependabot/npm_and_yarn/netlify-cli-11.3.0",
+                "ref_type": "branch",
+                "pusher_type": "user"
+            },
+            "repo": {
+                "id": 526513549,
+                "name": "davy39/ntn-boilerplate",
+                "url": "https://api.github.com/repos/davy39/ntn-boilerplate"
+            },
+            "actor": {
+                "login": "dependabot[bot]",
+                "id": 49699333,
+                "avatar_url": "https://avatars.githubusercontent.com/u/49699333?",
+                "gravatar_id": "",
+                "url": "https://api.github.com/users/dependabot[bot]"
+            },
+            "created_at": "2022-08-29T02:06:15Z",
+            "id": "23683284276"
+        },
+        "payload": {
+            "devDay": 0,
+            "devYear": 0,
+            "merge": 0,
+            "open": 0,
+            "pr": 0
+        }
+
+    }
+    ```
+
 - With filter result will return a map, such as:
     
     Params:
@@ -139,7 +235,7 @@ Sampling message and return to client.
     {
         "samplingRate": 1,
         "filter": [
-            "id", "type", "actor.login", "actor.avatar_url", "payload.push_id", "payload.commits"
+            "event.id", "event.type", "event.actor.login", "event.actor.avatar_url", "event.payload.push_id", "payload.merge"
         ]
     }
     ```
@@ -148,12 +244,12 @@ Sampling message and return to client.
 
     ```json
     {
-        "actor.avatar_url": "https://avatars.githubusercontent.com/u/48717?",
-        "actor.login": "emanuelef",
-        "id": "23454805798",
-        "payload.commits": null,
-        "payload.push_id": 0,
-        "type": "WatchEvent"
+        "event.actor.avatar_url": "https://avatars.githubusercontent.com/u/30280995?",
+        "event.actor.login": "alanhaledc",
+        "event.id": "23683417557",
+        "event.payload.push_id": 10857043797,
+        "event.type": "PushEvent",
+        "payload.merge": 0
     }
     ```
 
@@ -165,7 +261,7 @@ Sampling message and return to client.
     {
         "samplingRate": 1,
         "filter": [
-            "id", "type", "actor.login", "actor.avatar_url", "payload.push_id", "payload.commits"
+            "event.id", "event.type", "event.actor.login", "event.actor.avatar_url", "event.payload.push_id", "payload.merge"
         ],
         "returnType": "list"
     }
@@ -174,7 +270,7 @@ Sampling message and return to client.
     Result:
 
     ```json
-    ["23497872154","IssueCommentEvent","yegusa","https://avatars.githubusercontent.com/u/1328499?",null,null]
+    ["23683424409","PullRequestEvent","dependabot[bot]","https://avatars.githubusercontent.com/u/49699333?",null,0]
     ```
 
 ### Loop
@@ -208,9 +304,25 @@ Return to client by fixed time.
 
     ```json
     {
-        "msgList": [
-            {event entity},
-            {event entity}
+        "msgList": [{
+                "event": {event entity},
+                "payload": {
+                    "devDay": 0,
+                    "devYear": 0,
+                    "merge": 0,
+                    "open": 0,
+                    "pr": 0
+                }
+            }, {
+                "event": {event entity},
+                "payload": {
+                    "devDay": 0,
+                    "devYear": 0,
+                    "merge": 0,
+                    "open": 0,
+                    "pr": 0
+                }
+            }
         ],
         "typeMap": {
             "{event type}": {event num}
@@ -224,70 +336,116 @@ Return to client by fixed time.
     {
         "msgList": [
             {
-                "id": "23434997759",
-                "type": "IssuesEvent",
-                "actor": {
-                    "id": 35833812,
-                    "login": "pengYYYYY",
-                    "display_login": "pengYYYYY",
-                    "gravatar_id": "",
-                    "url": "https://api.github.com/users/pengYYYYY",
-                    "avatar_url": "https://avatars.githubusercontent.com/u/35833812?"
-                },
-                "repo": {
-                    "id": 438886855,
-                    "name": "Tencent/tdesign-vue-next",
-                    "url": "https://api.github.com/repos/Tencent/tdesign-vue-next"
+                "event": {
+                    "type": "PushEvent",
+                    "public": true,
+                    "payload": {
+                        "push_id": 10857075261,
+                        "size": 3,
+                        "distinct_size": 1,
+                        "ref": "refs/heads/dependabot/npm_and_yarn/typescript-4.8.2",
+                        "head": "cbc96e9571671ea0f1db18915b6e10c5263ad39d",
+                        "before": "55366fe5ae3befe1e8ee0ebd8d698fb3b600c7d2",
+                        "commits": [
+                            {
+                                "sha": "d57bad671ad2bbc41f36207063585caca1c5d00e",
+                                "author": {
+                                    "email": "49699333+dependabot[bot]@users.noreply.github.com",
+                                    "name": "dependabot[bot]"
+                                },
+                                "message": "chore(deps-dev): bump @types/node from 18.7.9 to 18.7.13 (#338)",
+                                "distinct": false,
+                                "url": "https://api.github.com/repos/iobroker-community-adapters/ioBroker.ring/commits/d57bad671ad2bbc41f36207063585caca1c5d00e"
+                            },
+                            {
+                                "sha": "55739c215a89e4a961dfe8ca5a63d9e8ff9cc528",
+                                "author": {
+                                    "email": "49699333+dependabot[bot]@users.noreply.github.com",
+                                    "name": "dependabot[bot]"
+                                },
+                                "message": "chore(deps-dev): bump @typescript-eslint/eslint-plugin (#341)",
+                                "distinct": false,
+                                "url": "https://api.github.com/repos/iobroker-community-adapters/ioBroker.ring/commits/55739c215a89e4a961dfe8ca5a63d9e8ff9cc528"
+                            },
+                            {
+                                "sha": "cbc96e9571671ea0f1db18915b6e10c5263ad39d",
+                                "author": {
+                                    "email": "49699333+dependabot[bot]@users.noreply.github.com",
+                                    "name": "dependabot[bot]"
+                                },
+                                "message": "chore(deps-dev): bump typescript from 4.7.4 to 4.8.2\n\nBumps [typescript](https://github.com/Microsoft/TypeScript) from 4.7.4 to 4.8.2.\n- [Release notes](https://github.com/Microsoft/TypeScript/releases)\n- [Commits](https://github.com/Microsoft/TypeScript/compare/v4.7.4...v4.8.2)\n\n---\nupdated-dependencies:\n- dependency-name: typescript\n  dependency-type: direct:development\n  update-type: version-update:semver-minor\n...\n\nSigned-off-by: dependabot[bot] \u003csupport@github.com\u003e",
+                                "distinct": true,
+                                "url": "https://api.github.com/repos/iobroker-community-adapters/ioBroker.ring/commits/cbc96e9571671ea0f1db18915b6e10c5263ad39d"
+                            }
+                        ]
+                    },
+                    "repo": {
+                        "id": 161008550,
+                        "name": "iobroker-community-adapters/ioBroker.ring",
+                        "url": "https://api.github.com/repos/iobroker-community-adapters/ioBroker.ring"
+                    },
+                    "actor": {
+                        "login": "dependabot[bot]",
+                        "id": 49699333,
+                        "avatar_url": "https://avatars.githubusercontent.com/u/49699333?",
+                        "gravatar_id": "",
+                        "url": "https://api.github.com/users/dependabot[bot]"
+                    },
+                    "org": {
+                        "login": "iobroker-community-adapters",
+                        "id": 46189175,
+                        "avatar_url": "https://avatars.githubusercontent.com/u/46189175?",
+                        "url": "https://api.github.com/orgs/iobroker-community-adapters"
+                    },
+                    "created_at": "2022-08-29T02:25:05Z",
+                    "id": "23683480363"
                 },
                 "payload": {
-                    "push_id": 0,
-                    "size": 0,
-                    "distinct_size": 0,
-                    "ref": "",
-                    "head": "",
-                    "before": "",
-                    "commits": null
-                },
-                "public": true,
-                "created_at": "2022-08-15T08:50:02Z"
+                    "devDay": 0,
+                    "devYear": 0,
+                    "merge": 0,
+                    "open": 0,
+                    "pr": 0
+                }
             },
             {
-                "id": "23434997392",
-                "type": "CreateEvent",
-                "actor": {
-                    "id": 74590681,
-                    "login": "naortalmor1",
-                    "display_login": "naortalmor1",
-                    "gravatar_id": "",
-                    "url": "https://api.github.com/users/naortalmor1",
-                    "avatar_url": "https://avatars.githubusercontent.com/u/74590681?"
-                },
-                "repo": {
-                    "id": 348281615,
-                    "name": "aquasecurity/trivy-plugin-aqua",
-                    "url": "https://api.github.com/repos/aquasecurity/trivy-plugin-aqua"
+                "event": {
+                    "type": "CreateEvent",
+                    "public": true,
+                    "payload": {
+                        "ref": "dependabot/npm_and_yarn/eslint-plugin-react-7.31.1",
+                        "ref_type": "branch",
+                        "master_branch": "master",
+                        "description": "Helpers for React Navigation",
+                        "pusher_type": "user"
+                    },
+                    "repo": {
+                        "id": 201448541,
+                        "name": "WrathChaos/react-navigation-helpers",
+                        "url": "https://api.github.com/repos/WrathChaos/react-navigation-helpers"
+                    },
+                    "actor": {
+                        "login": "dependabot[bot]",
+                        "id": 49699333,
+                        "avatar_url": "https://avatars.githubusercontent.com/u/49699333?",
+                        "gravatar_id": "",
+                        "url": "https://api.github.com/users/dependabot[bot]"
+                    },
+                    "created_at": "2022-08-29T02:25:05Z",
+                    "id": "23683480358"
                 },
                 "payload": {
-                    "push_id": 0,
-                    "size": 0,
-                    "distinct_size": 0,
-                    "ref": "plugin-update-v0.59.0",
-                    "head": "",
-                    "before": "",
-                    "commits": null
-                },
-                "public": true,
-                "created_at": "2022-08-15T08:50:01Z"
+                    "devDay": 0,
+                    "devYear": 0,
+                    "merge": 0,
+                    "open": 0,
+                    "pr": 0
+                }
             }
         ],
         "typeMap": {
-            "CreateEvent": 7,
-            "IssueCommentEvent": 4,
-            "IssuesEvent": 1,
-            "PullRequestEvent": 3,
-            "PullRequestReviewEvent": 1,
-            "PushEvent": 18,
-            "WatchEvent": 2
+            "CreateEvent": 1,
+            "PushEvent": 1
         }
     }
     ```
