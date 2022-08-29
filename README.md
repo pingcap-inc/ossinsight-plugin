@@ -125,6 +125,7 @@ E.g.:
 ```json
 {
     "firstMessageTag": true,
+    "apiVersion": 2,
     "eventMap": {
         "2022-01-01": "34",
         "2022-01-02": "41",
