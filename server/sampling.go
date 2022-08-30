@@ -121,8 +121,7 @@ func readSamplingHandler(name string, connection *websocket.Conn, configChan cha
                 logger.Error("config already set")
                 continue
             }
-            // Get Config
-            logger.Debug("got text message", zap.ByteString("msg", msg))
+
             samplingConfig := new(SamplingConfig)
             err = json.Unmarshal(msg, samplingConfig)
             if err != nil {

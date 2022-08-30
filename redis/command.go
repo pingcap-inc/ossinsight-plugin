@@ -15,59 +15,118 @@
 package redis
 
 import (
-	"context"
-	"github.com/pingcap-inc/ossinsight-plugin/logger"
-	"github.com/pingcap-inc/ossinsight-plugin/tidb"
-	"go.uber.org/zap"
-	"strconv"
-	"time"
+    "context"
+    "github.com/pingcap-inc/ossinsight-plugin/logger"
+    "github.com/pingcap-inc/ossinsight-plugin/tidb"
+    "go.uber.org/zap"
+    "strconv"
+    "time"
 )
 
-func EventNumberHSet(events []tidb.DailyEvent) error {
-	initClient()
+func EventNumberHSet(prefix string, events []tidb.DailyEvent) error {
+    initClient()
 
-	hashKey := eventDailyPrefix + strconv.Itoa(time.Now().Year())
+    hashKey := prefix + strconv.Itoa(time.Now().Year())
 
-	eventMap := make(map[string]interface{})
-	for _, event := range events {
-		eventMap[event.EventDay] = event.Events
-	}
+    eventMap := make(map[string]interface{})
+    for _, event := range events {
+        eventMap[event.EventDay] = event.Events
+    }
 
-	result := client.HSet(context.Background(), hashKey, eventMap)
-	if result.Err() != nil {
-		logger.Error("hash upsert error", zap.Error(result.Err()))
-		return result.Err()
-	}
+    return HSet(hashKey, eventMap)
+}
 
-	return nil
+func EventDailyNumberHSet(events []tidb.DailyEvent) error {
+    return EventNumberHSet(eventDailyPrefix, events)
+}
+
+func OpenPRDailyNumberHSet(events []tidb.DailyEvent) error {
+    return EventNumberHSet(openPRDailyPrefix, events)
+}
+
+func MergePRDailyNumberHSet(events []tidb.DailyEvent) error {
+    return EventNumberHSet(mergePRDailyPrefix, events)
+}
+
+func DeveloperDailyNumberHSet(events []tidb.DailyEvent) error {
+    return EventNumberHSet(devDailyPrefix, events)
+}
+
+func HSet(hashKey string, setMap map[string]interface{}) error {
+    result := client.HSet(context.Background(), hashKey, setMap)
+    if result.Err() != nil {
+        logger.Error("hash upsert error", zap.Error(result.Err()))
+        return result.Err()
+    }
+
+    return nil
 }
 
 func EventNumberGetThisYear() (map[string]string, error) {
-	hashKey := eventDailyPrefix + strconv.Itoa(time.Now().Year())
-	return HGetAll(hashKey)
+    hashKey := eventDailyPrefix + strconv.Itoa(time.Now().Year())
+    return HGetAll(hashKey)
+}
+
+func OpenPRNumberGetThisYear() (map[string]string, error) {
+    hashKey := openPRDailyPrefix + strconv.Itoa(time.Now().Year())
+    return HGetAll(hashKey)
+}
+
+func MergePRNumberGetThisYear() (map[string]string, error) {
+    hashKey := mergePRDailyPrefix + strconv.Itoa(time.Now().Year())
+    return HGetAll(hashKey)
+}
+
+func DeveloperNumberGetThisYear() (map[string]string, error) {
+    hashKey := devDailyPrefix + strconv.Itoa(time.Now().Year())
+    return HGetAll(hashKey)
 }
 
 func HGetAll(key string) (map[string]string, error) {
-	initClient()
+    initClient()
 
-	result := client.HGetAll(context.Background(), key)
-	if result.Err() != nil {
-		logger.Error("get all set error", zap.Error(result.Err()))
-		return nil, result.Err()
-	}
+    result := client.HGetAll(context.Background(), key)
+    if result.Err() != nil {
+        logger.Error("get all set error", zap.Error(result.Err()))
+        return nil, result.Err()
+    }
 
-	return result.Val(), nil
+    return result.Val(), nil
 }
 
-func EventNumberIncrease() error {
-	initClient()
+func PRNumberIncrease() error {
+    return EventNumberIncrease(eventDailyPrefix)
+}
 
-	hashKey := eventDailyPrefix + strconv.Itoa(time.Now().Year())
-	result := client.HIncrBy(context.Background(), hashKey, time.Now().Format("2006-01-02"), 1)
-	if result.Err() != nil {
-		logger.Error("event number increase error", zap.Error(result.Err()))
-		return result.Err()
-	}
+func OpenPRNumberIncrease() error {
+    return EventNumberIncrease(openPRDailyPrefix)
+}
 
-	return nil
+func MergeNumberIncrease() error {
+    return EventNumberIncrease(mergePRDailyPrefix)
+}
+
+func DevNumberIncrease() error {
+    return EventNumberIncrease(devDailyPrefix)
+}
+
+func DevNumberTotalIncrease() error {
+    return HIncr(devDailyPrefix, "total")
+}
+
+func EventNumberIncrease(prefix string) error {
+    return HIncr(prefix, time.Now().Format("2006-01-02"))
+}
+
+func HIncr(prefix, key string) error {
+    initClient()
+
+    hashKey := prefix + strconv.Itoa(time.Now().Year())
+    result := client.HIncrBy(context.Background(), hashKey, key, 1)
+    if result.Err() != nil {
+        logger.Error("event number increase error", zap.Error(result.Err()))
+        return result.Err()
+    }
+
+    return nil
 }
