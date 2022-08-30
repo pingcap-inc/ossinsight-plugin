@@ -1,37 +1,36 @@
 package config
 
-// Disable
-type Disable struct {
-	Producer bool `yaml:"producer"`
-	Interval bool `yaml:"interval"`
-}
-
-// Producer
-type Producer struct {
-	Retry int    `yaml:"retry"`
-	Topic string `yaml:"topic"`
+// Log
+type Log struct {
+	Level  string `yaml:"level"`
+	File   string `yaml:"file"`
+	Format string `yaml:"format"`
 }
 
 // Consumer
 type Consumer struct {
+	Topic       string `yaml:"topic"`
 	Name        string `yaml:"name"`
 	Concurrency int    `yaml:"concurrency"`
-	Topic       string `yaml:"topic"`
 }
 
-// Api
-type Api struct {
-	Version int `yaml:"version"`
+// Config
+type Config struct {
+	Disable  Disable  `yaml:"disable"`
+	Log      Log      `yaml:"log"`
+	Github   Github   `yaml:"github"`
+	Api      Api      `yaml:"api"`
+	Server   Server   `yaml:"server"`
+	Redis    Redis    `yaml:"redis"`
+	Pulsar   Pulsar   `yaml:"pulsar"`
+	Interval Interval `yaml:"interval"`
+	Tidb     Tidb     `yaml:"tidb"`
 }
 
-// Tidb
-type Tidb struct {
-	Password string `yaml:"password"`
-	Db       string `yaml:"db"`
-	Sql      Sql    `yaml:"sql"`
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	User     string `yaml:"user"`
+// Loop
+type Loop struct {
+	Timeout int `yaml:"timeout"`
+	Break   int `yaml:"break"`
 }
 
 // Server
@@ -43,31 +42,36 @@ type Server struct {
 
 // Pulsar
 type Pulsar struct {
+	Host     string   `yaml:"host"`
+	Audience string   `yaml:"audience"`
 	Keypath  string   `yaml:"keypath"`
 	Producer Producer `yaml:"producer"`
 	Consumer Consumer `yaml:"consumer"`
-	Host     string   `yaml:"host"`
-	Audience string   `yaml:"audience"`
 }
 
-// Config
-type Config struct {
-	Disable  Disable  `yaml:"disable"`
-	Server   Server   `yaml:"server"`
-	Pulsar   Pulsar   `yaml:"pulsar"`
-	Github   Github   `yaml:"github"`
-	Interval Interval `yaml:"interval"`
-	Api      Api      `yaml:"api"`
-	Redis    Redis    `yaml:"redis"`
-	Tidb     Tidb     `yaml:"tidb"`
-	Log      Log      `yaml:"log"`
+// Api
+type Api struct {
+	Version int `yaml:"version"`
 }
 
 // Interval
 type Interval struct {
 	Daily     string `yaml:"daily"`
+	Language  string `yaml:"language"`
 	Retry     int    `yaml:"retry"`
 	RetryWait int    `yaml:"retryWait"`
+}
+
+// Disable
+type Disable struct {
+	Producer bool `yaml:"producer"`
+	Interval bool `yaml:"interval"`
+}
+
+// Github
+type Github struct {
+	Loop   Loop     `yaml:"loop"`
+	Tokens []string `yaml:"tokens"`
 }
 
 // Redis
@@ -77,30 +81,28 @@ type Redis struct {
 	Db       int    `yaml:"db"`
 }
 
+// Producer
+type Producer struct {
+	Topic string `yaml:"topic"`
+	Retry int    `yaml:"retry"`
+}
+
+// Tidb
+type Tidb struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
+	Db       string `yaml:"db"`
+	Sql      Sql    `yaml:"sql"`
+}
+
 // Sql
 type Sql struct {
-	EventsDaily         string `yaml:"eventsDaily"`
 	PrDaily             string `yaml:"prDaily"`
 	PrDeveloperDaily    string `yaml:"prDeveloperDaily"`
 	PrDeveloperThisYear string `yaml:"prDeveloperThisYear"`
-}
-
-// Github
-type Github struct {
-	Loop   Loop     `yaml:"loop"`
-	Tokens []string `yaml:"tokens"`
-}
-
-// Loop
-type Loop struct {
-	Timeout int `yaml:"timeout"`
-	Break   int `yaml:"break"`
-}
-
-// Log
-type Log struct {
-	Level  string `yaml:"level"`
-	File   string `yaml:"file"`
-	Format string `yaml:"format"`
+	LanguageToday       string `yaml:"languageToday"`
+	EventsDaily         string `yaml:"eventsDaily"`
 }
 

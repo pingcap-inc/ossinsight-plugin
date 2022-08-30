@@ -16,6 +16,7 @@ type FirstResponse struct {
     OpenMap         map[string]string `json:"openMap"`
     MergeMap        map[string]string `json:"mergeMap"`
     DevMap          map[string]string `json:"devMap"`
+    LanguageMap     map[string]string `json:"languageMap"`
 }
 
 func writeFirstResponse(connection *websocket.Conn) error {
@@ -44,6 +45,13 @@ func writeFirstResponse(connection *websocket.Conn) error {
         logger.Error("redis get this year dev map error", zap.Error(err))
         return err
     }
+
+    lanMap, err := redis.LanguageNumberGetToday()
+    if err != nil {
+        logger.Error("redis get today language map error", zap.Error(err))
+        return err
+    }
+
     response := FirstResponse{
         FirstMessageTag: true,
         APIVersion:      version,
@@ -51,6 +59,7 @@ func writeFirstResponse(connection *websocket.Conn) error {
         OpenMap:         openMap,
         MergeMap:        mergeMap,
         DevMap:          devMap,
+        LanguageMap:     lanMap,
     }
 
     payload, _ := json.Marshal(response)

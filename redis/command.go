@@ -23,6 +23,23 @@ import (
     "time"
 )
 
+func EventLanguageHSet(prefix string, events []tidb.LanguageEvent) error {
+    initClient()
+
+    hashKey := prefix + time.Now().Format("2006-01-02")
+
+    eventMap := make(map[string]interface{})
+    for _, event := range events {
+        eventMap[event.Language] = event.Events
+    }
+
+    return HSet(hashKey, eventMap)
+}
+
+func TodayEventLanguageHSet(events []tidb.LanguageEvent) error {
+    return EventLanguageHSet(languageTodayPrefix, events)
+}
+
 func EventNumberHSet(prefix string, events []tidb.DailyEvent) error {
     initClient()
 
@@ -79,6 +96,11 @@ func MergePRNumberGetThisYear() (map[string]string, error) {
 
 func DeveloperNumberGetThisYear() (map[string]string, error) {
     hashKey := devDailyPrefix + strconv.Itoa(time.Now().Year())
+    return HGetAll(hashKey)
+}
+
+func LanguageNumberGetToday() (map[string]string, error) {
+    hashKey := languageTodayPrefix + time.Now().Format("2006-01-02")
     return HGetAll(hashKey)
 }
 

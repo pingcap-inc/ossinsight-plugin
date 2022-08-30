@@ -4,11 +4,13 @@ import (
     "github.com/google/go-github/v45/github"
     "github.com/pingcap-inc/ossinsight-plugin/logger"
     "go.uber.org/zap"
+    "time"
 )
 
 func AddEventCount(event github.Event) (pr, devDay, devYear, merge, open bool) {
     initClient()
 
+    // All the count metric is for PR
     if event.Type == nil || *event.Type != "PullRequestEvent" {
         return
     }
@@ -51,6 +53,9 @@ func AddEventCount(event github.Event) (pr, devDay, devYear, merge, open bool) {
         }
     }
 
+    if prEvent.Repo != nil && prEvent.Repo.Language != nil && len(*prEvent.Repo.Language) != 0 {
+        LanguageTodayIncrease(*prEvent.Repo.Language)
+    }
     return
 }
 
@@ -104,4 +109,8 @@ func AddDeveloperToday(developerID int64) error {
     }
 
     return nil
+}
+
+func LanguageTodayIncrease(language string) error {
+    return HIncr(languageTodayPrefix+time.Now().Format("2006-01-02"), language)
 }

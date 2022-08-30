@@ -21,14 +21,15 @@ import (
 )
 
 const (
-    eventIDPrefix      = "eid_"
-    eventYearPrefix    = "year_"
-    eventDayPrefix     = "date_"
-    distinctPrefix     = "d_"
-    eventDailyPrefix   = "daily_year_"
-    openPRDailyPrefix  = "daily_open_"
-    mergePRDailyPrefix = "daily_merge_"
-    devDailyPrefix     = "daily_dev_"
+    eventIDPrefix       = "eid_"
+    eventYearPrefix     = "year_"
+    eventDayPrefix      = "date_"
+    distinctPrefix      = "d_"
+    eventDailyPrefix    = "daily_year_"
+    openPRDailyPrefix   = "daily_open_"
+    mergePRDailyPrefix  = "daily_merge_"
+    devDailyPrefix      = "daily_dev_"
+    languageTodayPrefix = "today_lan_"
 )
 
 var (

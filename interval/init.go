@@ -21,6 +21,18 @@ func InitInterval() {
             retry(dailySync)
         }
     }()
+
+    languageInterval, err := time.ParseDuration(intervalConfig.Language)
+    if err != nil {
+        logger.Error("language interval parse error, use default", zap.Error(err))
+        dailyInterval = time.Hour
+    }
+
+    go func() {
+        for range time.Tick(languageInterval) {
+            retry(languageSync)
+        }
+    }()
 }
 
 func retry(handler func() error) {

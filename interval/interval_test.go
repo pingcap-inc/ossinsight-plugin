@@ -7,4 +7,8 @@ func TestLoop(t *testing.T) {
     if err != nil {
         t.Error(err)
     }
+    err = languageSync()
+    if err != nil {
+        t.Error(err)
+    }
 }
