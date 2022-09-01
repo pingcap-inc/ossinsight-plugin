@@ -59,14 +59,15 @@ func AddEventCount(event github.Event) (pr, devDay, devYear, merge, open bool) {
     return
 }
 
+// AddDeveloperCount return if this year and today first PR
 func AddDeveloperCount(developerID int64) (year, today bool) {
     initClient()
 
     if exist, err := AddDeveloperThisYear(developerID); err == nil {
-        year = exist
+        year = !exist
     }
     if exist, err := AddDeveloperToday(developerID); err == nil {
-        today = exist
+        today = !exist
     }
 
     return
