@@ -62,53 +62,53 @@ func AddEventCount(event github.Event) (pr, devDay, devYear, merge, open bool) {
 func AddDeveloperCount(developerID int64) (year, today bool) {
     initClient()
 
-    if err := AddDeveloperThisYear(developerID); err == nil {
-        year = true
+    if exist, err := AddDeveloperThisYear(developerID); err == nil {
+        year = exist
     }
-    if err := AddDeveloperToday(developerID); err == nil {
-        today = true
+    if exist, err := AddDeveloperToday(developerID); err == nil {
+        today = exist
     }
 
     return
 }
 
-func AddDeveloperThisYear(developerID int64) error {
+func AddDeveloperThisYear(developerID int64) (bool, error) {
     initClient()
 
     exist, err := DevelopIDThisYearExists(developerID)
     if err != nil {
         logger.Error("query developer id exist error", zap.Error(err))
-        return err
+        return exist, err
     }
 
     if !exist {
         if err = DevNumberTotalIncrease(); err != nil {
             logger.Error("hincrby error", zap.Error(err))
-            return err
+            return exist, err
         }
     }
 
-    return nil
+    return exist, nil
 }
 
-func AddDeveloperToday(developerID int64) error {
+func AddDeveloperToday(developerID int64) (bool, error) {
     initClient()
 
     exist, err := DevelopIDTodayExists(developerID)
 
     if err != nil {
         logger.Error("query developer id exist error", zap.Error(err))
-        return err
+        return exist, err
     }
 
     if !exist {
         if err = DevNumberIncrease(); err != nil {
             logger.Error("hincrby error", zap.Error(err))
-            return err
+            return exist, err
         }
     }
 
-    return nil
+    return exist, nil
 }
 
 func LanguageTodayIncrease(language string) error {
