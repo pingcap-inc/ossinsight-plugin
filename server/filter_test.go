@@ -15,15 +15,15 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/google/go-github/v45/github"
-	"testing"
+    "encoding/json"
+    "fmt"
+    "github.com/google/go-github/v47/github"
+    "testing"
 )
 
 func TestGetFieldToMap(t *testing.T) {
-	filter := []string{"id", "type", "actor.login", "actor.avatar_url", "payload.push_id", "payload.commits"}
-	event := github.Event{}
-	msg, _ := json.Marshal(event)
-	fmt.Println(FilterMessageToMap(msg, filter))
+    filter := []string{"id", "type", "actor.login", "actor.avatar_url", "payload.push_id", "payload.commits"}
+    event := github.Event{}
+    msg, _ := json.Marshal(event)
+    fmt.Println(FilterMessageToMap(msg, filter))
 }
