@@ -33,6 +33,18 @@ func InitInterval() {
             retry(languageSync)
         }
     }()
+
+    latestLanguageInterval, err := time.ParseDuration(intervalConfig.Latest)
+    if err != nil {
+        logger.Error("latest language interval parse error, use default", zap.Error(err))
+        latestLanguageInterval = time.Second
+    }
+
+    go func() {
+        for range time.Tick(latestLanguageInterval) {
+            retry(latestLanguageLoad)
+        }
+    }()
 }
 
 func retry(handler func() error) {

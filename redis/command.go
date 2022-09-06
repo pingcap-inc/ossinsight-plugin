@@ -16,6 +16,8 @@ package redis
 
 import (
     "context"
+    redisConnector "github.com/go-redis/redis/v9"
+    "github.com/pingcap-inc/ossinsight-plugin/config"
     "github.com/pingcap-inc/ossinsight-plugin/logger"
     "github.com/pingcap-inc/ossinsight-plugin/tidb"
     "go.uber.org/zap"
@@ -116,39 +118,64 @@ func HGetAll(key string) (map[string]string, error) {
     return result.Val(), nil
 }
 
-func PRNumberIncrease() error {
-    return EventNumberIncrease(eventDailyPrefix)
-}
-
-func OpenPRNumberIncrease() error {
-    return EventNumberIncrease(openPRDailyPrefix)
-}
-
-func MergeNumberIncrease() error {
-    return EventNumberIncrease(mergePRDailyPrefix)
-}
-
-func DevNumberIncrease() error {
-    return EventNumberIncrease(devDailyPrefix)
-}
-
-func DevNumberTotalIncrease() error {
-    return HIncr(devDailyPrefix, "total")
-}
-
-func EventNumberIncrease(prefix string) error {
-    return HIncr(prefix, time.Now().Format("2006-01-02"))
-}
-
-func HIncr(prefix, key string) error {
+func HIncr(key, field string) error {
     initClient()
 
-    hashKey := prefix + strconv.Itoa(time.Now().Year())
-    result := client.HIncrBy(context.Background(), hashKey, key, 1)
+    result := client.HIncrBy(context.Background(), key, field, 1)
     if result.Err() != nil {
-        logger.Error("event number increase error", zap.Error(result.Err()))
+        logger.Error("hash value increase error", zap.Error(result.Err()))
         return result.Err()
     }
 
     return nil
+}
+
+func Expire(key string, expiration time.Duration) error {
+    initClient()
+
+    result := client.Expire(context.Background(), key, expiration)
+    if result.Err() != nil {
+        logger.Error("set expire error", zap.Error(result.Err()))
+        return result.Err()
+    }
+
+    return nil
+}
+
+func MergeScriptRun(prefix string, start, end int64) (map[string]int, error) {
+    initClient()
+
+    mergeLatest := redisConnector.NewScript(config.GetReadonlyConfig().Redis.Lua.MergeLatest)
+    result, err := mergeLatest.Run(context.Background(), client,
+        []string{prefix, strconv.FormatInt(start, 10), strconv.FormatInt(end, 10)}).Slice()
+
+    if err != nil {
+        logger.Error("script run get error", zap.Error(err))
+        return nil, err
+    }
+
+    resultMap := make(map[string]int)
+    for i := range result {
+        if i%2 != 0 {
+            language, ok := result[i-1].(string)
+            if !ok {
+                logger.Error("language not a string", zap.Any("item", result[i-1]))
+                continue
+            }
+
+            num, ok := result[i].(int64)
+            if !ok {
+                logger.Error("appear number not an int64", zap.Any("item", result[i]))
+                continue
+            }
+
+            if _, exist := resultMap[language]; !exist {
+                resultMap[language] = 0
+            }
+
+            resultMap[language] = resultMap[language] + int(num)
+        }
+    }
+
+    return resultMap, err
 }

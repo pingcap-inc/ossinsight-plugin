@@ -18,7 +18,7 @@ import (
     "context"
     "encoding/json"
     "fmt"
-    "github.com/google/go-github/v45/github"
+    "github.com/google/go-github/v47/github"
     "github.com/pingcap-inc/ossinsight-plugin/config"
     "github.com/pingcap-inc/ossinsight-plugin/logger"
     "github.com/pingcap-inc/ossinsight-plugin/mq"

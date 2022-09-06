@@ -36,6 +36,10 @@ func createWebsocket() {
         samplingHandler(w, r, upgrader)
     })
 
+    http.HandleFunc("/language/latest", func(w http.ResponseWriter, r *http.Request) {
+        latestHandler(w, r, upgrader)
+    })
+
     http.HandleFunc(readonlyConfig.Server.Health, func(w http.ResponseWriter, r *http.Request) {
         io.WriteString(w, "OK")
     })

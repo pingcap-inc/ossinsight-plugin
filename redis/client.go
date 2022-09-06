@@ -30,6 +30,7 @@ const (
     mergePRDailyPrefix  = "daily_merge_"
     devDailyPrefix      = "daily_dev_"
     languageTodayPrefix = "today_lan_"
+    latestPrefix        = "l_"
 )
 
 var (
