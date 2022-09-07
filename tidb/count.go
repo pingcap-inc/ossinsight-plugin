@@ -1,33 +1,41 @@
 package tidb
 
 import (
-    "fmt"
-    "github.com/pingcap-inc/ossinsight-plugin/config"
+	"fmt"
+	"github.com/pingcap-inc/ossinsight-plugin/config"
 )
 
-func QueryThisYearDeveloperCount() (int, error) {
-    tidbConfig := config.GetReadonlyConfig().Tidb
-    return QueryDeveloperCount(tidbConfig.Sql.PrDeveloperThisYear)
+type YearlyContent struct {
+	Developers int
+	Repos      int
+	Additions  int
+	Deletions  int
 }
 
-func QueryDeveloperCount(sql string) (int, error) {
-    initDBOnce.Do(createDB)
+func QueryThisYearSumCount() (YearlyContent, error) {
+	tidbConfig := config.GetReadonlyConfig().Tidb
+	return QueryYearlyCount(tidbConfig.Sql.Yearly)
+}
 
-    rows, err := tidb.Query(sql)
-    if err != nil {
-        return 0, err
-    }
-    defer rows.Close()
+func QueryYearlyCount(sql string) (YearlyContent, error) {
+	initDBOnce.Do(createDB)
 
-    for rows.Next() {
-        number := 0
-        err = rows.Scan(&number)
-        if err == nil {
-            return number, nil
-        } else {
-            return 0, err
-        }
-    }
+	number := YearlyContent{}
 
-    return 0, fmt.Errorf("empty result")
+	rows, err := tidb.Query(sql)
+	if err != nil {
+		return number, err
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		err = rows.Scan(&number.Developers, &number.Repos, &number.Additions, &number.Deletions)
+		if err == nil {
+			return number, nil
+		} else {
+			return number, err
+		}
+	}
+
+	return number, fmt.Errorf("empty result")
 }

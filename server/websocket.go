@@ -15,55 +15,55 @@
 package main
 
 import (
-    "github.com/gorilla/websocket"
-    "github.com/pingcap-inc/ossinsight-plugin/config"
-    "github.com/pingcap-inc/ossinsight-plugin/fetcher"
-    "github.com/pingcap-inc/ossinsight-plugin/logger"
-    "go.uber.org/zap"
-    "io"
-    "net/http"
-    "strconv"
+	"github.com/gorilla/websocket"
+	"github.com/pingcap-inc/ossinsight-plugin/config"
+	"github.com/pingcap-inc/ossinsight-plugin/fetcher"
+	"github.com/pingcap-inc/ossinsight-plugin/logger"
+	"go.uber.org/zap"
+	"io"
+	"net/http"
+	"strconv"
 )
 
 func createWebsocket() {
-    readonlyConfig := config.GetReadonlyConfig()
+	readonlyConfig := config.GetReadonlyConfig()
 
-    upgrader := &websocket.Upgrader{
-        CheckOrigin: func(r *http.Request) bool { return true },
-    }
+	upgrader := &websocket.Upgrader{
+		CheckOrigin: func(r *http.Request) bool { return true },
+	}
 
-    http.HandleFunc("/sampling", func(w http.ResponseWriter, r *http.Request) {
-        samplingHandler(w, r, upgrader)
-    })
+	http.HandleFunc("/sampling", func(w http.ResponseWriter, r *http.Request) {
+		samplingHandler(w, r, upgrader)
+	})
 
-    http.HandleFunc("/language/latest", func(w http.ResponseWriter, r *http.Request) {
-        latestHandler(w, r, upgrader)
-    })
+	http.HandleFunc("/language/latest", func(w http.ResponseWriter, r *http.Request) {
+		latestHandler(w, r, upgrader)
+	})
 
-    http.HandleFunc(readonlyConfig.Server.Health, func(w http.ResponseWriter, r *http.Request) {
-        io.WriteString(w, "OK")
-    })
+	http.HandleFunc(readonlyConfig.Server.Health, func(w http.ResponseWriter, r *http.Request) {
+		io.WriteString(w, "OK")
+	})
 
-    port := readonlyConfig.Server.Port
-    err := http.ListenAndServe(":"+strconv.Itoa(port), nil)
-    if err != nil {
-        logger.Fatal("websocket server start error", zap.Error(err))
-    }
-    logger.Info("websocket start", zap.Int("port", port))
+	port := readonlyConfig.Server.Port
+	err := http.ListenAndServe(":"+strconv.Itoa(port), nil)
+	if err != nil {
+		logger.Fatal("websocket server start error", zap.Error(err))
+	}
+	logger.Info("websocket start", zap.Int("port", port))
 }
 
 func remain(msg fetcher.Msg, eventType, repoName, userName string) bool {
-    if len(eventType) > 0 && msg.Event.Type != nil && *msg.Event.Type != eventType {
-        return false
-    }
+	if len(eventType) > 0 && msg.Event.Type != nil && *msg.Event.Type != eventType {
+		return false
+	}
 
-    if len(repoName) > 0 && msg.Event.Repo != nil && msg.Event.Repo.Name != nil && *msg.Event.Repo.Name != repoName {
-        return false
-    }
+	if len(repoName) > 0 && msg.Event.Repo != nil && msg.Event.Repo.Name != nil && *msg.Event.Repo.Name != repoName {
+		return false
+	}
 
-    if len(userName) > 0 && msg.Event.Actor.Login != nil && *msg.Event.Actor.Login != userName {
-        return false
-    }
+	if len(userName) > 0 && msg.Event.Actor.Login != nil && *msg.Event.Actor.Login != userName {
+		return false
+	}
 
-    return true
+	return true
 }

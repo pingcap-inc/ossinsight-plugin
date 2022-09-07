@@ -24,19 +24,19 @@ import (
 )
 
 func startConsumeMessage() {
-    mq.StartConsume(func(message pulsar.Message) error {
-        payload := message.Payload()
+	mq.StartConsume(func(message pulsar.Message) error {
+		payload := message.Payload()
 
-        var msg fetcher.Msg
-        err := json.Unmarshal(payload, &msg)
-        if err != nil {
-            logger.Error("event unmarshal error", zap.Error(err))
-            // drop this message, or it will block whole topic
-            return nil
-        }
+		var msg fetcher.Msg
+		err := json.Unmarshal(payload, &msg)
+		if err != nil {
+			logger.Error("event unmarshal error", zap.Error(err))
+			// drop this message, or it will block whole topic
+			return nil
+		}
 
-        // dispatch event to all listeners
-        DispatchEvent(msg)
-        return nil
-    })
+		// dispatch event to all listeners
+		DispatchEvent(msg)
+		return nil
+	})
 }

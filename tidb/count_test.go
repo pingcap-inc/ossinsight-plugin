@@ -1,15 +1,15 @@
 package tidb
 
 import (
-    "fmt"
-    "testing"
+	"fmt"
+	"testing"
 )
 
-func TestQueryThisYearDeveloperCount(t *testing.T) {
-    result, err := QueryThisYearDeveloperCount()
-    if err != nil {
-        t.Error(err)
-    }
+func TestQueryThisYearSumCount(t *testing.T) {
+	result, err := QueryThisYearSumCount()
+	if err != nil {
+		t.Error(err)
+	}
 
-    fmt.Println(result)
+	fmt.Println(result)
 }
