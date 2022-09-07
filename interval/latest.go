@@ -9,6 +9,7 @@ import (
 
 // latestLanguageMapListenerList listeners for latestLanguageMap
 var latestLanguageMapListenerList = make(map[string]chan map[string]int)
+var cacheLatestLanguageMap = make(map[string]int)
 
 func latestLanguageLoad() error {
 	languageMap, err := redis.MergeLatestLanguage()
@@ -38,10 +39,15 @@ func LanguageMapListenerDelete(key string) {
 }
 
 func languageMapDispatch(latestLanguageMap map[string]int) {
+	cacheLatestLanguageMap = latestLanguageMap
 	// use another goroutine to prevent block listener has blocked channel
 	go func() {
 		for key := range latestLanguageMapListenerList {
 			latestLanguageMapListenerList[key] <- latestLanguageMap
 		}
 	}()
+}
+
+func GetCachedLatestLanguageMap() map[string]int {
+	return cacheLatestLanguageMap
 }

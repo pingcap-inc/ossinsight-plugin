@@ -356,3 +356,63 @@ Calculate latest hour PR language map and send to client every seconds.
         "JavaScript": 178
     }
     ```
+
+## Watch Language Change API
+
+### API Using Step
+
+- `Client` start to connect the API Endpoint by `RAW WebSocket` protocol.
+- `Server` will send an initial message by ***ONLY ONCE***.
+- `Server` will waiting `Client` to send params.
+- `Client` send params.
+- `Server` will endless send message to `Client` until connection closed.
+
+### Initial Message
+
+The initial message will has `firstMessageTag` tag, and it will be true.
+
+E.g.:
+
+```json
+{
+    "firstMessageTag": true,
+    "apiVersion": 2,
+    "languageMap": {
+        "Bicep": 1,
+        "C": 4,
+        "TypeScript": 55,
+        "Vue": 4
+    }
+}
+```
+
+### Usage
+
+Language deletions map and additions map will be return every seconds(If deletions and additions are not both null).
+
+- Endpoint: `/language/watch`, e.g.: `ws://localhost:6000/language/watch`.
+- Params:
+
+    | Name | Required | Type | Description |
+    | :- | :- | :- | :- |
+    | `language` | No | string list | Specify the language you want to see. If you don't set it, all fields will be returned. |
+
+    E.g.:
+
+    ```json
+    {
+        "language": ["JavaScript", "C++", "Java"]
+    }
+    ```
+
+- Result:
+
+    ```json
+    {
+        "Deletions": {},
+        "Additions": {
+            "Java": "1",
+            "JavaScript": "3"
+        }
+    }
+    ```

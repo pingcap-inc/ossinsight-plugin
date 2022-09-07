@@ -33,6 +33,12 @@ func InitInterval() {
 			retry(latestLanguageLoad)
 		}
 	}()
+
+	go func() {
+		for range time.Tick(latestLanguageInterval) {
+			retry(watchLanguageLoad)
+		}
+	}()
 }
 
 func retry(handler func() error) {

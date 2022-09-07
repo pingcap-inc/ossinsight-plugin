@@ -12,7 +12,7 @@ import (
 
 func AddEventCount(event github.Event) map[string]interface{} {
 	result := make(map[string]interface{})
-	repo, devDay, devYear := 0, 0, 0
+	repo, devDay, devYear, additions, deletions := 0, 0, 0, 0, 0
 
 	initClient()
 
@@ -55,6 +55,11 @@ func AddEventCount(event github.Event) map[string]interface{} {
 			if prEvent.PullRequest != nil && prEvent.PullRequest.Merged != nil && *prEvent.PullRequest.Merged {
 				MergeNumberIncrease()
 				result["merge"] = 1
+
+				if prEvent.PullRequest.Additions != nil && prEvent.PullRequest.Deletions != nil {
+					additions = *prEvent.PullRequest.Additions
+					deletions = *prEvent.PullRequest.Deletions
+				}
 			} else {
 				CloseNumberIncrease()
 				result["close"] = 1
@@ -79,7 +84,8 @@ func AddEventCount(event github.Event) map[string]interface{} {
 		}
 	}
 
-	HIncrYearSum(devYear, repo, *prEvent.PullRequest.Additions, *prEvent.PullRequest.Deletions)
+	result["repoYear"] = repo
+	HIncrYearSum(devYear, repo, additions, deletions)
 	return result
 }
 
@@ -167,6 +173,27 @@ func MergeLatestLanguage() (map[string]int, error) {
 	}
 
 	return resultMap, nil
+}
+
+func WatchLanguage() (map[string]string, map[string]string, error) {
+	secondLength := config.GetReadonlyConfig().Interval.LatestDuring
+	currentSecond := time.Now().Unix()
+
+	deletionsKey := latestPrefix + strconv.FormatInt(currentSecond-int64(secondLength)-1, 10)
+	deletionsMap, err := HGetAll(deletionsKey)
+	if err != nil {
+		logger.Error("get deletions map error", zap.Error(err))
+		return nil, nil, err
+	}
+
+	additionsKey := latestPrefix + strconv.FormatInt(currentSecond-1, 10)
+	additionsMap, err := HGetAll(additionsKey)
+	if err != nil {
+		logger.Error("get additions map error", zap.Error(err))
+		return nil, nil, err
+	}
+
+	return deletionsMap, additionsMap, nil
 }
 
 func EventNumberHSet(events []tidb.DailyEvent) error {
