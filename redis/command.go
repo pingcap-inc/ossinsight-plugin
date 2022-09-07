@@ -51,6 +51,11 @@ func MergePRNumberGetThisYear() (map[string]string, error) {
 	return HGetAll(hashKey)
 }
 
+func ClosePRNumberGetThisYear() (map[string]string, error) {
+	hashKey := closePRDailyPrefix + strconv.Itoa(time.Now().Year())
+	return HGetAll(hashKey)
+}
+
 func DeveloperNumberGetThisYear() (map[string]string, error) {
 	hashKey := devDailyPrefix + strconv.Itoa(time.Now().Year())
 	return HGetAll(hashKey)

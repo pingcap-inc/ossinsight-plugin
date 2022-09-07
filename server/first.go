@@ -15,6 +15,7 @@ type FirstResponse struct {
 	EventMap        map[string]string `json:"eventMap"`
 	OpenMap         map[string]string `json:"openMap"`
 	MergeMap        map[string]string `json:"mergeMap"`
+	CloseMap        map[string]string `json:"closeMap"`
 	DevMap          map[string]string `json:"devMap"`
 	SumMap          map[string]string `json:"sumMap"`
 }
@@ -40,6 +41,12 @@ func writeFirstResponse(connection *websocket.Conn) error {
 		return err
 	}
 
+	closeMap, err := redis.ClosePRNumberGetThisYear()
+	if err != nil {
+		logger.Error("redis get this year close map error", zap.Error(err))
+		return err
+	}
+
 	devMap, err := redis.DeveloperNumberGetThisYear()
 	if err != nil {
 		logger.Error("redis get this year dev map error", zap.Error(err))
@@ -58,6 +65,7 @@ func writeFirstResponse(connection *websocket.Conn) error {
 		EventMap:        eventMap,
 		OpenMap:         openMap,
 		MergeMap:        mergeMap,
+		CloseMap:        closeMap,
 		DevMap:          devMap,
 		SumMap:          sumMap,
 	}

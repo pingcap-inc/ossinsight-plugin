@@ -132,10 +132,6 @@ func DevNumberIncrease() error {
 	return EventNumberIncrease(devDailyPrefix)
 }
 
-func DevNumberTotalIncrease() error {
-	return HIncrYear(devDailyPrefix, "total")
-}
-
 func EventNumberIncrease(prefix string) error {
 	return HIncrYear(prefix, time.Now().Format("2006-01-02"))
 }
@@ -175,7 +171,10 @@ func MergeLatestLanguage() (map[string]int, error) {
 
 func EventNumberHSet(events []tidb.DailyEvent) error {
 	if err := eventNumberHSetHandler(eventDailyPrefix, events, func(event tidb.DailyEvent) interface{} {
-		return event.MergedPRs + event.ClosedPRs + event.OpenedPRs
+		merged, _ := strconv.Atoi(event.MergedPRs)
+		opened, _ := strconv.Atoi(event.OpenedPRs)
+		closed, _ := strconv.Atoi(event.ClosedPRs)
+		return merged + opened + closed
 	}); err != nil {
 		logger.Error("set event daily error", zap.Error(err))
 		return err
