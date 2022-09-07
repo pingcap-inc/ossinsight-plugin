@@ -4,23 +4,32 @@ import (
 	"encoding/json"
 	"github.com/gorilla/websocket"
 	"github.com/pingcap-inc/ossinsight-plugin/config"
+	"github.com/pingcap-inc/ossinsight-plugin/interval"
 	"github.com/pingcap-inc/ossinsight-plugin/logger"
 	"github.com/pingcap-inc/ossinsight-plugin/redis"
 	"go.uber.org/zap"
 )
 
-type FirstResponse struct {
-	FirstMessageTag bool              `json:"firstMessageTag"`
-	APIVersion      int               `json:"apiVersion"`
-	EventMap        map[string]string `json:"eventMap"`
-	OpenMap         map[string]string `json:"openMap"`
-	MergeMap        map[string]string `json:"mergeMap"`
-	CloseMap        map[string]string `json:"closeMap"`
-	DevMap          map[string]string `json:"devMap"`
-	SumMap          map[string]string `json:"sumMap"`
-}
+type (
+	SamplingFirstResponse struct {
+		FirstMessageTag bool              `json:"firstMessageTag"`
+		APIVersion      int               `json:"apiVersion"`
+		EventMap        map[string]string `json:"eventMap"`
+		OpenMap         map[string]string `json:"openMap"`
+		MergeMap        map[string]string `json:"mergeMap"`
+		CloseMap        map[string]string `json:"closeMap"`
+		DevMap          map[string]string `json:"devMap"`
+		SumMap          map[string]string `json:"sumMap"`
+	}
 
-func writeFirstResponse(connection *websocket.Conn) error {
+	WatchFirstResponse struct {
+		FirstMessageTag bool           `json:"firstMessageTag"`
+		APIVersion      int            `json:"apiVersion"`
+		LanguageMap     map[string]int `json:"languageMap"`
+	}
+)
+
+func writeSamplingFirstResponse(connection *websocket.Conn) error {
 	version := config.GetReadonlyConfig().Api.Version
 
 	eventMap, err := redis.EventNumberGetThisYear()
@@ -59,7 +68,7 @@ func writeFirstResponse(connection *websocket.Conn) error {
 		return err
 	}
 
-	response := FirstResponse{
+	response := SamplingFirstResponse{
 		FirstMessageTag: true,
 		APIVersion:      version,
 		EventMap:        eventMap,
@@ -73,6 +82,28 @@ func writeFirstResponse(connection *websocket.Conn) error {
 	payload, _ := json.Marshal(response)
 
 	err = connection.WriteMessage(websocket.TextMessage, payload)
+	if err != nil {
+		logger.Error("write first response", zap.Error(err))
+		return err
+	}
+
+	return nil
+}
+
+func writeWatchFirstResponse(connection *websocket.Conn) error {
+	version := config.GetReadonlyConfig().Api.Version
+
+	cachedLanguageMap := interval.GetCachedLatestLanguageMap()
+
+	response := WatchFirstResponse{
+		FirstMessageTag: true,
+		APIVersion:      version,
+		LanguageMap:     cachedLanguageMap,
+	}
+
+	payload, _ := json.Marshal(response)
+
+	err := connection.WriteMessage(websocket.TextMessage, payload)
 	if err != nil {
 		logger.Error("write first response", zap.Error(err))
 		return err

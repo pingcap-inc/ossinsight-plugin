@@ -40,6 +40,10 @@ func createWebsocket() {
 		latestHandler(w, r, upgrader)
 	})
 
+	http.HandleFunc("/language/watch", func(w http.ResponseWriter, r *http.Request) {
+		watchHandler(w, r, upgrader)
+	})
+
 	http.HandleFunc(readonlyConfig.Server.Health, func(w http.ResponseWriter, r *http.Request) {
 		io.WriteString(w, "OK")
 	})

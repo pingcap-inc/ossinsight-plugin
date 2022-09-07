@@ -102,7 +102,7 @@ func readSamplingHandler(name string, connection *websocket.Conn, configChan cha
 		connection.Close()
 	}()
 
-	err := writeFirstResponse(connection)
+	err := writeSamplingFirstResponse(connection)
 	if err != nil {
 		logger.Error("write first response error", zap.Error(err))
 		return
