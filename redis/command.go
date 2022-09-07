@@ -15,167 +15,121 @@
 package redis
 
 import (
-    "context"
-    redisConnector "github.com/go-redis/redis/v9"
-    "github.com/pingcap-inc/ossinsight-plugin/config"
-    "github.com/pingcap-inc/ossinsight-plugin/logger"
-    "github.com/pingcap-inc/ossinsight-plugin/tidb"
-    "go.uber.org/zap"
-    "strconv"
-    "time"
+	"context"
+	redisConnector "github.com/go-redis/redis/v9"
+	"github.com/pingcap-inc/ossinsight-plugin/config"
+	"github.com/pingcap-inc/ossinsight-plugin/logger"
+	"go.uber.org/zap"
+	"strconv"
+	"time"
 )
 
-func EventLanguageHSet(prefix string, events []tidb.LanguageEvent) error {
-    initClient()
-
-    hashKey := prefix + time.Now().Format("2006-01-02")
-
-    eventMap := make(map[string]interface{})
-    for _, event := range events {
-        eventMap[event.Language] = event.Events
-    }
-
-    return HSet(hashKey, eventMap)
-}
-
-func TodayEventLanguageHSet(events []tidb.LanguageEvent) error {
-    return EventLanguageHSet(languageTodayPrefix, events)
-}
-
-func EventNumberHSet(prefix string, events []tidb.DailyEvent) error {
-    initClient()
-
-    hashKey := prefix + strconv.Itoa(time.Now().Year())
-
-    eventMap := make(map[string]interface{})
-    for _, event := range events {
-        eventMap[event.EventDay] = event.Events
-    }
-
-    return HSet(hashKey, eventMap)
-}
-
-func EventDailyNumberHSet(events []tidb.DailyEvent) error {
-    return EventNumberHSet(eventDailyPrefix, events)
-}
-
-func OpenPRDailyNumberHSet(events []tidb.DailyEvent) error {
-    return EventNumberHSet(openPRDailyPrefix, events)
-}
-
-func MergePRDailyNumberHSet(events []tidb.DailyEvent) error {
-    return EventNumberHSet(mergePRDailyPrefix, events)
-}
-
-func DeveloperDailyNumberHSet(events []tidb.DailyEvent) error {
-    return EventNumberHSet(devDailyPrefix, events)
-}
-
 func HSet(hashKey string, setMap map[string]interface{}) error {
-    result := client.HSet(context.Background(), hashKey, setMap)
-    if result.Err() != nil {
-        logger.Error("hash upsert error", zap.Error(result.Err()))
-        return result.Err()
-    }
+	initClient()
 
-    return nil
+	result := client.HSet(context.Background(), hashKey, setMap)
+	if result.Err() != nil {
+		logger.Error("hash upsert error", zap.Error(result.Err()))
+		return result.Err()
+	}
+
+	return nil
 }
 
 func EventNumberGetThisYear() (map[string]string, error) {
-    hashKey := eventDailyPrefix + strconv.Itoa(time.Now().Year())
-    return HGetAll(hashKey)
+	hashKey := eventDailyPrefix + strconv.Itoa(time.Now().Year())
+	return HGetAll(hashKey)
 }
 
 func OpenPRNumberGetThisYear() (map[string]string, error) {
-    hashKey := openPRDailyPrefix + strconv.Itoa(time.Now().Year())
-    return HGetAll(hashKey)
+	hashKey := openPRDailyPrefix + strconv.Itoa(time.Now().Year())
+	return HGetAll(hashKey)
 }
 
 func MergePRNumberGetThisYear() (map[string]string, error) {
-    hashKey := mergePRDailyPrefix + strconv.Itoa(time.Now().Year())
-    return HGetAll(hashKey)
+	hashKey := mergePRDailyPrefix + strconv.Itoa(time.Now().Year())
+	return HGetAll(hashKey)
 }
 
 func DeveloperNumberGetThisYear() (map[string]string, error) {
-    hashKey := devDailyPrefix + strconv.Itoa(time.Now().Year())
-    return HGetAll(hashKey)
-}
-
-func LanguageNumberGetToday() (map[string]string, error) {
-    hashKey := languageTodayPrefix + time.Now().Format("2006-01-02")
-    return HGetAll(hashKey)
+	hashKey := devDailyPrefix + strconv.Itoa(time.Now().Year())
+	return HGetAll(hashKey)
 }
 
 func HGetAll(key string) (map[string]string, error) {
-    initClient()
+	initClient()
 
-    result := client.HGetAll(context.Background(), key)
-    if result.Err() != nil {
-        logger.Error("get all set error", zap.Error(result.Err()))
-        return nil, result.Err()
-    }
+	result := client.HGetAll(context.Background(), key)
+	if result.Err() != nil {
+		logger.Error("get all set error", zap.Error(result.Err()))
+		return nil, result.Err()
+	}
 
-    return result.Val(), nil
+	return result.Val(), nil
 }
 
 func HIncr(key, field string) error {
-    initClient()
+	return HIncrBy(key, field, 1)
+}
 
-    result := client.HIncrBy(context.Background(), key, field, 1)
-    if result.Err() != nil {
-        logger.Error("hash value increase error", zap.Error(result.Err()))
-        return result.Err()
-    }
+func HIncrBy(key, field string, incr int64) error {
+	initClient()
 
-    return nil
+	result := client.HIncrBy(context.Background(), key, field, 1)
+	if result.Err() != nil {
+		logger.Error("hash value increase error", zap.Error(result.Err()))
+		return result.Err()
+	}
+
+	return nil
 }
 
 func Expire(key string, expiration time.Duration) error {
-    initClient()
+	initClient()
 
-    result := client.Expire(context.Background(), key, expiration)
-    if result.Err() != nil {
-        logger.Error("set expire error", zap.Error(result.Err()))
-        return result.Err()
-    }
+	result := client.Expire(context.Background(), key, expiration)
+	if result.Err() != nil {
+		logger.Error("set expire error", zap.Error(result.Err()))
+		return result.Err()
+	}
 
-    return nil
+	return nil
 }
 
 func MergeScriptRun(prefix string, start, end int64) (map[string]int, error) {
-    initClient()
+	initClient()
 
-    mergeLatest := redisConnector.NewScript(config.GetReadonlyConfig().Redis.Lua.MergeLatest)
-    result, err := mergeLatest.Run(context.Background(), client,
-        []string{prefix, strconv.FormatInt(start, 10), strconv.FormatInt(end, 10)}).Slice()
+	mergeLatest := redisConnector.NewScript(config.GetReadonlyConfig().Redis.Lua.MergeLatest)
+	result, err := mergeLatest.Run(context.Background(), client,
+		[]string{prefix, strconv.FormatInt(start, 10), strconv.FormatInt(end, 10)}).Slice()
 
-    if err != nil {
-        logger.Error("script run get error", zap.Error(err))
-        return nil, err
-    }
+	if err != nil {
+		logger.Error("script run get error", zap.Error(err))
+		return nil, err
+	}
 
-    resultMap := make(map[string]int)
-    for i := range result {
-        if i%2 != 0 {
-            language, ok := result[i-1].(string)
-            if !ok {
-                logger.Error("language not a string", zap.Any("item", result[i-1]))
-                continue
-            }
+	resultMap := make(map[string]int)
+	for i := range result {
+		if i%2 != 0 {
+			language, ok := result[i-1].(string)
+			if !ok {
+				logger.Error("language not a string", zap.Any("item", result[i-1]))
+				continue
+			}
 
-            num, ok := result[i].(int64)
-            if !ok {
-                logger.Error("appear number not an int64", zap.Any("item", result[i]))
-                continue
-            }
+			num, ok := result[i].(int64)
+			if !ok {
+				logger.Error("appear number not an int64", zap.Any("item", result[i]))
+				continue
+			}
 
-            if _, exist := resultMap[language]; !exist {
-                resultMap[language] = 0
-            }
+			if _, exist := resultMap[language]; !exist {
+				resultMap[language] = 0
+			}
 
-            resultMap[language] = resultMap[language] + int(num)
-        }
-    }
+			resultMap[language] = resultMap[language] + int(num)
+		}
+	}
 
-    return resultMap, err
+	return resultMap, err
 }

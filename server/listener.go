@@ -24,26 +24,26 @@ import (
 var listenerMap = make(map[string]chan fetcher.Msg)
 
 func ListenerRegister(key string, listener chan fetcher.Msg) error {
-    logger.Debug("register listener", zap.String("key", key))
-    if listener == nil {
-        return fmt.Errorf("listener is nil, please ckeck it")
-    }
+	logger.Debug("register listener", zap.String("key", key))
+	if listener == nil {
+		return fmt.Errorf("listener is nil, please ckeck it")
+	}
 
-    listenerMap[key] = listener
+	listenerMap[key] = listener
 
-    return nil
+	return nil
 }
 
 func ListenerDelete(key string) {
-    logger.Debug("delete listener", zap.String("key", key))
-    delete(listenerMap, key)
+	logger.Debug("delete listener", zap.String("key", key))
+	delete(listenerMap, key)
 }
 
 func DispatchEvent(event fetcher.Msg) {
-    // use another goroutine to prevent block listener has blocked channel
-    go func() {
-        for key := range listenerMap {
-            listenerMap[key] <- event
-        }
-    }()
+	// use another goroutine to prevent block listener has blocked channel
+	go func() {
+		for key := range listenerMap {
+			listenerMap[key] <- event
+		}
+	}()
 }

@@ -1,47 +1,47 @@
 package interval
 
 import (
-    "fmt"
-    "github.com/pingcap-inc/ossinsight-plugin/logger"
-    "github.com/pingcap-inc/ossinsight-plugin/redis"
-    "go.uber.org/zap"
+	"fmt"
+	"github.com/pingcap-inc/ossinsight-plugin/logger"
+	"github.com/pingcap-inc/ossinsight-plugin/redis"
+	"go.uber.org/zap"
 )
 
 // latestLanguageMapListenerList listeners for latestLanguageMap
 var latestLanguageMapListenerList = make(map[string]chan map[string]int)
 
 func latestLanguageLoad() error {
-    languageMap, err := redis.MergeLatestLanguage()
-    if err != nil {
-        logger.Error("load language map error", zap.Error(err))
-        return err
-    }
-    languageMapDispatch(languageMap)
+	languageMap, err := redis.MergeLatestLanguage()
+	if err != nil {
+		logger.Error("load language map error", zap.Error(err))
+		return err
+	}
+	languageMapDispatch(languageMap)
 
-    return nil
+	return nil
 }
 
 func LanguageMapListenerRegister(key string, listener chan map[string]int) error {
-    logger.Debug("latestLanguageMap register listener", zap.String("key", key))
-    if listener == nil {
-        return fmt.Errorf("listener is nil, please ckeck it")
-    }
+	logger.Debug("latestLanguageMap register listener", zap.String("key", key))
+	if listener == nil {
+		return fmt.Errorf("listener is nil, please ckeck it")
+	}
 
-    latestLanguageMapListenerList[key] = listener
+	latestLanguageMapListenerList[key] = listener
 
-    return nil
+	return nil
 }
 
 func LanguageMapListenerDelete(key string) {
-    logger.Debug("latestLanguageMap delete listener", zap.String("key", key))
-    delete(latestLanguageMapListenerList, key)
+	logger.Debug("latestLanguageMap delete listener", zap.String("key", key))
+	delete(latestLanguageMapListenerList, key)
 }
 
 func languageMapDispatch(latestLanguageMap map[string]int) {
-    // use another goroutine to prevent block listener has blocked channel
-    go func() {
-        for key := range latestLanguageMapListenerList {
-            latestLanguageMapListenerList[key] <- latestLanguageMap
-        }
-    }()
+	// use another goroutine to prevent block listener has blocked channel
+	go func() {
+		for key := range latestLanguageMapListenerList {
+			latestLanguageMapListenerList[key] <- latestLanguageMap
+		}
+	}()
 }

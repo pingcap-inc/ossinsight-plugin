@@ -1,75 +1,11 @@
 package config
 
-// Server
-type Server struct {
-	Port      int    `yaml:"port"`
-	Health    string `yaml:"health"`
-	SyncEvent string `yaml:"syncEvent"`
-}
-
 // Redis
 type Redis struct {
-	Db       int    `yaml:"db"`
 	Lua      Lua    `yaml:"lua"`
 	Host     string `yaml:"host"`
 	Password string `yaml:"password"`
-}
-
-// Loop
-type Loop struct {
-	Timeout int `yaml:"timeout"`
-	Break   int `yaml:"break"`
-}
-
-// Interval
-type Interval struct {
-	RetryWait    int    `yaml:"retryWait"`
-	Daily        string `yaml:"daily"`
-	Language     string `yaml:"language"`
-	Latest       string `yaml:"latest"`
-	LatestDuring int    `yaml:"latestDuring"`
-	Retry        int    `yaml:"retry"`
-}
-
-// Tidb
-type Tidb struct {
-	Password string `yaml:"password"`
-	Db       string `yaml:"db"`
-	Sql      Sql    `yaml:"sql"`
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	User     string `yaml:"user"`
-}
-
-// Pulsar
-type Pulsar struct {
-	Env      string   `yaml:"env"`
-	DevHost  string   `yaml:"devHost"`
-	Host     string   `yaml:"host"`
-	Audience string   `yaml:"audience"`
-	Keypath  string   `yaml:"keypath"`
-	Producer Producer `yaml:"producer"`
-	Consumer Consumer `yaml:"consumer"`
-}
-
-// Sql
-type Sql struct {
-	LanguageToday       string `yaml:"languageToday"`
-	EventsDaily         string `yaml:"eventsDaily"`
-	PrDaily             string `yaml:"prDaily"`
-	PrDeveloperDaily    string `yaml:"prDeveloperDaily"`
-	PrDeveloperThisYear string `yaml:"prDeveloperThisYear"`
-}
-
-// Lua
-type Lua struct {
-	MergeLatest string `yaml:"mergeLatest"`
-}
-
-// Disable
-type Disable struct {
-	Interval bool `yaml:"interval"`
-	Producer bool `yaml:"producer"`
+	Db       int    `yaml:"db"`
 }
 
 // Producer
@@ -78,10 +14,23 @@ type Producer struct {
 	Retry int    `yaml:"retry"`
 }
 
-// Github
-type Github struct {
-	Loop   Loop     `yaml:"loop"`
-	Tokens []string `yaml:"tokens"`
+// Sql
+type Sql struct {
+	EventsDaily string `yaml:"eventsDaily"`
+	Yearly      string `yaml:"yearly"`
+}
+
+// Loop
+type Loop struct {
+	Timeout int `yaml:"timeout"`
+	Break   int `yaml:"break"`
+}
+
+// Server
+type Server struct {
+	Health    string `yaml:"health"`
+	SyncEvent string `yaml:"syncEvent"`
+	Port      int    `yaml:"port"`
 }
 
 // Log
@@ -93,22 +42,44 @@ type Log struct {
 
 // Config
 type Config struct {
-	Disable  Disable  `yaml:"disable"`
+	Redis    Redis    `yaml:"redis"`
 	Pulsar   Pulsar   `yaml:"pulsar"`
 	Github   Github   `yaml:"github"`
-	Interval Interval `yaml:"interval"`
 	Tidb     Tidb     `yaml:"tidb"`
 	Api      Api      `yaml:"api"`
+	Disable  Disable  `yaml:"disable"`
 	Server   Server   `yaml:"server"`
 	Log      Log      `yaml:"log"`
-	Redis    Redis    `yaml:"redis"`
+	Interval Interval `yaml:"interval"`
+}
+
+// Lua
+type Lua struct {
+	MergeLatest string `yaml:"mergeLatest"`
+}
+
+// Pulsar
+type Pulsar struct {
+	Consumer Consumer `yaml:"consumer"`
+	Env      string   `yaml:"env"`
+	DevHost  string   `yaml:"devHost"`
+	Host     string   `yaml:"host"`
+	Audience string   `yaml:"audience"`
+	Keypath  string   `yaml:"keypath"`
+	Producer Producer `yaml:"producer"`
 }
 
 // Consumer
 type Consumer struct {
+	Name        string `yaml:"name"`
 	Concurrency int    `yaml:"concurrency"`
 	Topic       string `yaml:"topic"`
-	Name        string `yaml:"name"`
+}
+
+// Github
+type Github struct {
+	Loop   Loop     `yaml:"loop"`
+	Tokens []string `yaml:"tokens"`
 }
 
 // Api
@@ -116,3 +87,27 @@ type Api struct {
 	Version int `yaml:"version"`
 }
 
+// Interval
+type Interval struct {
+	Daily        string `yaml:"daily"`
+	Latest       string `yaml:"latest"`
+	LatestDuring int    `yaml:"latestDuring"`
+	Retry        int    `yaml:"retry"`
+	RetryWait    int    `yaml:"retryWait"`
+}
+
+// Tidb
+type Tidb struct {
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
+	Db       string `yaml:"db"`
+	Sql      Sql    `yaml:"sql"`
+}
+
+// Disable
+type Disable struct {
+	Producer bool `yaml:"producer"`
+	Interval bool `yaml:"interval"`
+}

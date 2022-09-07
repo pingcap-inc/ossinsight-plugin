@@ -15,36 +15,38 @@
 package redis
 
 import (
-    redisConnector "github.com/go-redis/redis/v9"
-    "github.com/pingcap-inc/ossinsight-plugin/config"
-    "sync"
+	redisConnector "github.com/go-redis/redis/v9"
+	"github.com/pingcap-inc/ossinsight-plugin/config"
+	"sync"
 )
 
 const (
-    eventIDPrefix       = "eid_"
-    eventYearPrefix     = "year_"
-    eventDayPrefix      = "date_"
-    distinctPrefix      = "d_"
-    eventDailyPrefix    = "daily_year_"
-    openPRDailyPrefix   = "daily_open_"
-    mergePRDailyPrefix  = "daily_merge_"
-    devDailyPrefix      = "daily_dev_"
-    languageTodayPrefix = "today_lan_"
-    latestPrefix        = "l_"
+	eventIDPrefix      = "eid_"
+	eventYearPrefix    = "year_"
+	repoYearPrefix     = "repo_"
+	eventDayPrefix     = "date_"
+	distinctPrefix     = "d_"
+	eventDailyPrefix   = "daily_year_"
+	openPRDailyPrefix  = "daily_open_"
+	mergePRDailyPrefix = "daily_merge_"
+	closePRDailyPrefix = "daily_close_"
+	devDailyPrefix     = "daily_dev_"
+	yearSumPrefix      = "year_sum_"
+	latestPrefix       = "l_"
 )
 
 var (
-    client        *redisConnector.Client
-    redisInitOnce sync.Once
+	client        *redisConnector.Client
+	redisInitOnce sync.Once
 )
 
 func initClient() {
-    redisInitOnce.Do(func() {
-        readonlyConfig := config.GetReadonlyConfig()
-        client = redisConnector.NewClient(&redisConnector.Options{
-            Addr:     readonlyConfig.Redis.Host,
-            Password: readonlyConfig.Redis.Password,
-            DB:       readonlyConfig.Redis.Db,
-        })
-    })
+	redisInitOnce.Do(func() {
+		readonlyConfig := config.GetReadonlyConfig()
+		client = redisConnector.NewClient(&redisConnector.Options{
+			Addr:     readonlyConfig.Redis.Host,
+			Password: readonlyConfig.Redis.Password,
+			DB:       readonlyConfig.Redis.Db,
+		})
+	})
 }

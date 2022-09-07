@@ -15,32 +15,32 @@
 package main
 
 import (
-    "github.com/pingcap-inc/ossinsight-plugin/config"
-    "github.com/pingcap-inc/ossinsight-plugin/fetcher"
-    "github.com/pingcap-inc/ossinsight-plugin/interval"
-    "time"
+	"github.com/pingcap-inc/ossinsight-plugin/config"
+	"github.com/pingcap-inc/ossinsight-plugin/fetcher"
+	"github.com/pingcap-inc/ossinsight-plugin/interval"
+	"time"
 )
 
 func main() {
-    // Fixed time zone
-    time.Local = time.UTC
+	// Fixed time zone
+	time.Local = time.UTC
 
-    readOnlyConfig := config.GetReadonlyConfig()
-    // start to fetch GitHub events and send to message queue
+	readOnlyConfig := config.GetReadonlyConfig()
+	// start to fetch GitHub events and send to message queue
 
-    if !readOnlyConfig.Disable.Producer {
-        go fetcher.InitLoop()
-    }
+	if !readOnlyConfig.Disable.Producer {
+		go fetcher.InitLoop()
+	}
 
-    if !readOnlyConfig.Disable.Interval {
-        go interval.InitInterval()
-    }
+	if !readOnlyConfig.Disable.Interval {
+		go interval.InitInterval()
+	}
 
-    // start to consume message
-    startConsumeMessage()
+	// start to consume message
+	startConsumeMessage()
 
-    createWebsocket()
+	createWebsocket()
 
-    wait := make(chan int)
-    <-wait
+	wait := make(chan int)
+	<-wait
 }
