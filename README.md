@@ -24,6 +24,10 @@
         health: "/health" # health check api name
         syncEvent: "/sync-event" # event sync api name
 
+    disable:
+        producer: false # disable github fetcher and pulsar producer
+        interval: false # disable interval
+
     log:
         level: debug
         file: test.log
@@ -34,8 +38,30 @@
         host: localhost:6379
         password: ""
         db: 0
+        lua: # lua scripts
+            mergeLatest: |
+            local map = {}
+            for i = KEYS[2], KEYS[3] do
+                local res = redis.call('HGETALL', KEYS[1] .. i)
+                for j = 1, #res, 2 do
+                if map[res[j]] == nil then
+                    map[res[j]] = tonumber(res[j + 1])
+                else
+                    map[res[j]] = map[res[j]] + tonumber(res[j + 1])
+                end
+                end
+            end
+            
+            local result = {}
+            for k, v in pairs(map) do
+                table.insert(result, k)
+                table.insert(result, v)
+            end
+            return result
 
     pulsar:
+        env: dev # dev / formal, if env is dev, will use devHost and no auth way to create pulsar client
+        devHost: pulsar://localhost:6650 # dev pulsar host
         host: pulsar+ssl://XXX.XXX.XXX:XXXX # pulsar host
         audience: XXX:XX:XXXXX:XXXXX:XXXX # pulsar audience
         keypath: /XXX/XXX/XXX.json # private key path, download form StreamNative cloud
@@ -68,52 +94,40 @@
         password: "" # tidb password
         db: gharchive_dev # tidb database
         sql: # some sql
-        eventsDaily: |
-            SELECT event_day, COUNT(*) AS events
-            FROM github_events ge
-            WHERE
-            type = 'PullRequestEvent'
-            AND event_year = YEAR(NOW())
-            GROUP BY event_day
-            ORDER BY event_day;
-        prToday: |
-            SELECT action, COUNT(action) as event_num
-            FROM github_events
-            WHERE type = 'PullRequestEvent'
-            AND ((action = 'closed' AND pr_merged = true) OR action = 'opened')
-            AND event_day = DATE(NOW())
-            GROUP BY action, event_day;
-        prDeveloperToday: |
-            SELECT COUNT(DISTINCT actor_id) as actor_num
-            FROM github_events
-            WHERE type = 'PullRequestEvent'
-            AND ((action = 'closed' AND pr_merged = true) OR action = 'opened')
-            AND event_day = DATE(NOW())
-        prThisYear: |
-            SELECT action, COUNT(action) as event_num
-            FROM github_events
-            WHERE type = 'PullRequestEvent'
-            AND ((action = 'closed' AND pr_merged = true) OR action = 'opened')
-            AND event_year = YEAR(NOW())
-            GROUP BY action
-        prDeveloperThisYear: |
-            SELECT COUNT(DISTINCT actor_id) as actor_num
-            FROM github_events
-            WHERE type = 'PullRequestEvent'
-            AND ((action = 'closed' AND pr_merged = true) OR action = 'opened')
-            AND event_year = YEAR(NOW())
+            eventsDaily: |
+                SELECT event_day, 
+                    COUNT(DISTINCT actor_id) AS developers,
+                    COUNT(DISTINCT CASE WHEN action = 'opened' THEN pr_or_issue_id ELSE NULL END) AS opened_prs,
+                    COUNT(DISTINCT CASE WHEN action = 'closed' AND pr_merged = false THEN pr_or_issue_id ELSE NULL END) AS closed_prs,
+                    COUNT(DISTINCT CASE WHEN action = 'closed' AND pr_merged = true THEN pr_or_issue_id ELSE NULL END) AS merged_prs
+                FROM github_events ge
+                WHERE type = 'PullRequestEvent'
+                    AND action IN ('closed', 'opened')
+                    AND event_year = YEAR(NOW())
+                GROUP BY event_day
+                ORDER BY event_day
+            yearly: |
+                SELECT
+                    COUNT(DISTINCT actor_id) AS developers,
+                    COUNT(DISTINCT repo_id) AS repos,
+                    SUM(CASE WHEN action = 'closed' AND pr_merged = true THEN additions ELSE 0 END) AS additions,
+                    SUM(CASE WHEN action = 'closed' AND pr_merged = true THEN deletions ELSE 0 END) AS deletions
+                FROM github_events
+                WHERE type = 'PullRequestEvent'
+                    AND action IN ('closed', 'opened')
+                    AND event_year = YEAR(NOW())
     ```
 
 5. Start by `./ossinsight-plugin`.
 
-## API
+## Sampling API
 
 ### API Using Step
 
 - `Client` start to connect the API Endpoint by `RAW WebSocket` protocol.
 - `Server` will send an initial message by ***ONLY ONCE***.
 - `Server` will waiting `Client` to send params.
-- `Client` send params (API has different params struct).
+- `Client` send params.
 - `Server` will endless send message to `Client` until connection closed.
 
 ### Initial Message
@@ -132,31 +146,54 @@ E.g.:
         "2022-01-03": "100",
         "2022-01-04": "322",
         "2022-01-05": "326",
-        "2022-01-06": "391",
-        "2022-01-07": "279",
-        "2022-01-08": "120",
-        "2022-01-09": "39",
-        "2022-01-10": "331",
-        "2022-01-11": "355"
+        "2022-01-06": "391"
     },
-    "yearCountMap": {
-        "dev": "2091",
-        "merge": "28225",
-        "open": "34078"
+    "openMap": {
+        "2022-01-01": "34",
+        "2022-01-02": "41",
+        "2022-01-03": "100",
+        "2022-01-04": "322",
+        "2022-01-05": "326",
+        "2022-01-06": "391"
     },
-    "dayCountMap": {
-        "dev": "2",
-        "merge": "65",
-        "open": "227"
+    "mergeMap": {
+        "2022-01-01": "34",
+        "2022-01-02": "41",
+        "2022-01-03": "100",
+        "2022-01-04": "322",
+        "2022-01-05": "326",
+        "2022-01-06": "391"
+    },
+    "closeMap": {
+        "2022-01-01": "34",
+        "2022-01-02": "41",
+        "2022-01-03": "100",
+        "2022-01-04": "322",
+        "2022-01-05": "326",
+        "2022-01-06": "391"
+    },
+    "devMap": {
+        "2022-01-01": "34",
+        "2022-01-02": "41",
+        "2022-01-03": "100",
+        "2022-01-04": "322",
+        "2022-01-05": "326",
+        "2022-01-06": "391"
+    },
+    "sumMap": {
+        "additions": "64787714692",
+        "deletions": "25243554672",
+        "dev": "2373829",
+        "repo": "7594633"
     }
 }
 ```
 
-### Sampling
+### Usage
 
 Sampling message and return to client.
 
-- Endpoint: `/sampling`, e.g.: `wss://localhost:6000/sampling`.
+- Endpoint: `/sampling`, e.g.: `ws://localhost:6000/sampling`.
 - Params:
 
     | Name | Required | Type | Description |
@@ -275,4 +312,47 @@ Sampling message and return to client.
 
     ```json
     ["23683424409","PullRequestEvent","dependabot[bot]","https://avatars.githubusercontent.com/u/49699333?",null,0]
+    ```
+
+## Latest Language API
+
+### API Using Step
+
+- `Client` start to connect the API Endpoint by `RAW WebSocket` protocol.
+- `Server` will waiting `Client` to send params.
+- `Client` send params.
+- `Server` will endless send message to `Client` until connection closed.
+
+### Usage
+
+Calculate latest hour PR language map and send to client every seconds.
+
+- Endpoint: `/language/latest`, e.g.: `ws://localhost:6000/language/latest`.
+- Params:
+
+    | Name | Required | Type | Description |
+    | :- | :- | :- | :- |
+    | `language` | No | string list | Specify the language you want to see. If you don't set it, all fields will be returned. |
+    | `top` | No | int | Send client the most PR languages with top. If you don't set it, entire map will be returned. |
+
+    > **Note:**
+    >
+    > The `top` filter will be effect after `language` filter.
+
+    E.g.:
+
+    ```json
+    {
+        "top": 2,
+        "language": ["JavaScript", "C++", "Java"]
+    }
+    ```
+
+- Result:
+
+    ```json
+    {
+        "Java": 112,
+        "JavaScript": 178
+    }
     ```
