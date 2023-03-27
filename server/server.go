@@ -18,12 +18,16 @@ import (
 	"github.com/pingcap-inc/ossinsight-plugin/config"
 	"github.com/pingcap-inc/ossinsight-plugin/fetcher"
 	"github.com/pingcap-inc/ossinsight-plugin/interval"
+	"runtime/debug"
 	"time"
 )
 
 func main() {
 	// Fixed time zone
 	time.Local = time.UTC
+	// Limit the memory usage as 512 MiB
+	const maxMemory = 512 * 1024 * 1024
+	debug.SetMemoryLimit(maxMemory)
 
 	readOnlyConfig := config.GetReadonlyConfig()
 	// start to fetch GitHub events and send to message queue
