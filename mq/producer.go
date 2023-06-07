@@ -17,6 +17,7 @@ package mq
 import (
 	"context"
 	"github.com/apache/pulsar-client-go/pulsar"
+	"github.com/pingcap-inc/ossinsight-plugin/lark"
 	"github.com/pingcap-inc/ossinsight-plugin/logger"
 	"go.uber.org/zap"
 	"sync"
@@ -51,6 +52,7 @@ func Send(payload []byte, key string) error {
 	for retry := 0; retry < readonlyConfig.Pulsar.Producer.Retry; retry++ {
 		if lastErr = sendOnce(payload, key); lastErr != nil {
 			logger.Error("send message error", zap.Error(lastErr), zap.Int("retry times", retry))
+			lark.SendWithToleranceAndFrequencyControl("send pulsar message error, PTAL!")
 		} else {
 			break
 		}

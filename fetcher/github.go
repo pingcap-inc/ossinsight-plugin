@@ -20,6 +20,7 @@ import (
 	"fmt"
 	"github.com/google/go-github/v47/github"
 	"github.com/pingcap-inc/ossinsight-plugin/config"
+	"github.com/pingcap-inc/ossinsight-plugin/lark"
 	"github.com/pingcap-inc/ossinsight-plugin/logger"
 	"github.com/pingcap-inc/ossinsight-plugin/mq"
 	"github.com/pingcap-inc/ossinsight-plugin/redis"
@@ -71,6 +72,7 @@ func InitLoop() {
 					// If it not exists, we should continue to process the next event.
 					// Skip the error log, otherwise the log will be beat all the disk space when the redis down.
 					// logger.Error("redis request error", zap.Error(err))
+					lark.SendWithToleranceAndFrequencyControl("redis request error, PTAL!")
 					continue
 				}
 
