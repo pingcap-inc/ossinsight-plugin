@@ -68,7 +68,9 @@ func InitLoop() {
 				// judge event exist
 				exists, err := redis.EventIDExists(*event.ID)
 				if err != nil {
-					logger.Error("redis request error", zap.Error(err))
+					// If it not exists, we should continue to process the next event.
+					// Skip the error log, otherwise the log will be beat all the disk space when the redis down.
+					// logger.Error("redis request error", zap.Error(err))
 					continue
 				}
 
