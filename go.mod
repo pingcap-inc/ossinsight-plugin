@@ -26,6 +26,7 @@ require (
 	github.com/ardielle/ardielle-go v1.5.2 // indirect
 	github.com/benbjohnson/clock v1.3.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
+	github.com/bluele/gcache v0.0.2 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
 	github.com/danieljoos/wincred v1.1.2 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect

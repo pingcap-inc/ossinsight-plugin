@@ -40,6 +40,15 @@ type Log struct {
 	Format string `yaml:"format"`
 }
 
+// Lark
+type Lark struct {
+	Webhook             string `yaml:"webhook"`
+	SignKey             string `yaml:"signKey"`
+	MinimumBreak        int    `yaml:"minimumBreak"`
+	ErrorTolerance      int    `yaml:"errorTolerance"`
+	ErrorToleranceBreak int    `yaml:"errorToleranceBreak"`
+}
+
 // Config
 type Config struct {
 	Redis    Redis    `yaml:"redis"`
@@ -50,6 +59,7 @@ type Config struct {
 	Disable  Disable  `yaml:"disable"`
 	Server   Server   `yaml:"server"`
 	Log      Log      `yaml:"log"`
+	Lark     Lark     `yaml:"lark"`
 	Interval Interval `yaml:"interval"`
 }
 
