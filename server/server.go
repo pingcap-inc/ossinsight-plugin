@@ -18,6 +18,7 @@ import (
 	"github.com/pingcap-inc/ossinsight-plugin/config"
 	"github.com/pingcap-inc/ossinsight-plugin/fetcher"
 	"github.com/pingcap-inc/ossinsight-plugin/interval"
+	"runtime"
 	"runtime/debug"
 	"time"
 )
@@ -28,6 +29,9 @@ func main() {
 	// Limit the memory usage as 512 MiB
 	const maxMemory = 512 * 1024 * 1024
 	debug.SetMemoryLimit(maxMemory)
+
+	// Limit the CPU usage as 1 core
+	runtime.GOMAXPROCS(1)
 
 	readOnlyConfig := config.GetReadonlyConfig()
 	// start to fetch GitHub events and send to message queue
