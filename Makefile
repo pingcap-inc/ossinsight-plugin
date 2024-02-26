@@ -21,6 +21,9 @@ redis-clean:
 	docker stop redis-test
 	docker rm redis-test
 
+rising-wave:
+	docker run -itd -p 4566:4566 -p 5691:5691 risingwavelabs/risingwave:latest playground
+
 config:
 	go install github.com/Icemap/yaml2go-cli@latest
 	yaml2go-cli -p config -s Config -i config/config.yaml -o config/config_struct.go
