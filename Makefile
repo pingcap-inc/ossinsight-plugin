@@ -17,12 +17,8 @@
 redis:
 	docker run -itd --name redis-test -p 6379:6379 redis
 
-redis-clean:
-	docker stop redis-test
-	docker rm redis-test
-
-rising-wave:
-	docker run -itd -p 4566:4566 -p 5691:5691 risingwavelabs/risingwave:latest playground
+pulsar:
+	docker run -itd -p 6650:6650 -p 8080:8080 apachepulsar/pulsar:3.1.2 bin/pulsar standalone
 
 config:
 	go install github.com/Icemap/yaml2go-cli@latest
