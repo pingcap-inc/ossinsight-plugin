@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.PHONY: redis config redis-clean build start restart stop
+.PHONY: redis pulsar config build start restart stop
 
 redis:
 	docker run -itd --name redis-test -p 6379:6379 redis
@@ -42,3 +42,7 @@ restart:
 stop:
 	pm2 stop ossinsight-plugin
 	pm2 delete ossinsight-plugin
+
+risingwave_recreate:
+	psql -h 192.168.0.3 -p 4566 -d dev -U root -a -f ./risingwave/drop_objects.sql
+	psql -h 192.168.0.3 -p 4566 -d dev -U root -a -f ./risingwave/create_objects.sql

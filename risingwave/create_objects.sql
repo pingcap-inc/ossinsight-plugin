@@ -2,13 +2,8 @@ CREATE TABLE IF NOT EXISTS t_github_prs (
     id VARCHAR PRIMARY KEY,
     dev_id BIGINT,
     repo_id BIGINT,
-    create_time TIMESTAMP WITHOUT TIME ZONE,
+    create_time TIMESTAMP WITH TIME ZONE,
     program_language VARCHAR
-);
-
-CREATE TABLE IF NOT EXISTS t_counter (
-    key VARCHAR PRIMARY KEY,
-    value BIGINT
 );
 
 CREATE TABLE IF NOT EXISTS t_year_sum (
@@ -30,12 +25,12 @@ CREATE TABLE IF NOT EXISTS t_event_daily (
 
 CREATE TABLE IF NOT EXISTS t_developer_id (
     "developer" BIGINT PRIMARY KEY,
-    "create_time" TIMESTAMP WITHOUT TIME ZONE,
+    "create_time" TIMESTAMP WITH TIME ZONE,
 );
 
 CREATE TABLE IF NOT EXISTS t_repository_id (
     "repository" BIGINT PRIMARY KEY,
-    "create_time" TIMESTAMP WITHOUT TIME ZONE,
+    "create_time" TIMESTAMP WITH TIME ZONE,
 );
 
 -- CREATE MATERIALIZED VIEW mv_daily_count AS

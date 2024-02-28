@@ -2,6 +2,7 @@ package risingwave
 
 import (
 	"context"
+	"fmt"
 	"github.com/jackc/pgx/v5"
 	"time"
 )
@@ -24,7 +25,25 @@ func EventIDExists(id string) (bool, error) {
 	return existCount != 0, nil
 }
 
-func DevIDInsertAndTestExists(developer int64) (bool, error) {
+func DevIDTestExistsForThisYear(developer int64) (bool, error) {
+	timeLayout := "2006-01-02 15:04:05"
+	thisYearStart, err := time.Parse(timeLayout, fmt.Sprintf("%d-01-01 00:00:00", time.Now().Year()))
+	if err != nil {
+		return false, err
+	}
+	return devIDTestExistsAndInsert(developer, thisYearStart)
+}
+
+func DevIDTestExistsForToday(developer int64) (bool, error) {
+	timeLayout := "2006-01-02 15:04:05"
+	todayStart, err := time.Parse(timeLayout, time.Now().Format("2006-01-02")+" 00:00:00")
+	if err != nil {
+		return false, err
+	}
+	return devIDTestExistsAndInsert(developer, todayStart)
+}
+
+func devIDTestExistsAndInsert(developer int64, startTime time.Time) (bool, error) {
 	initRisingWave()
 
 	ctx := context.Background()
@@ -33,8 +52,8 @@ func DevIDInsertAndTestExists(developer int64) (bool, error) {
 	err := risingWave.QueryRow(ctx, `
 		SELECT COUNT(*) FROM t_developer_id
 		WHERE developer = @developer
-		AND create_time >= date_trunc('year', CURRENT_TIMESTAMP)
-	`, pgx.NamedArgs{"developer": developer}).Scan(&existCount)
+		AND create_time >= @start_time
+	`, pgx.NamedArgs{"developer": developer, "start_time": startTime}).Scan(&existCount)
 
 	if err != nil {
 		return false, err
@@ -58,7 +77,7 @@ func DevIDInsertAndTestExists(developer int64) (bool, error) {
 	return existCount != 0, nil
 }
 
-func RepoIDInsertAndTestExists(repository int64) (bool, error) {
+func RepoIDTestExistsForThisYear(repository int64) (bool, error) {
 	initRisingWave()
 
 	ctx := context.Background()

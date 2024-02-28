@@ -1,70 +1,33 @@
 package config
 
-// Tidb
-type Tidb struct {
-	Db       string `yaml:"db"`
-	Sql      Sql    `yaml:"sql"`
-	Host     string `yaml:"host"`
-	Port     int    `yaml:"port"`
-	User     string `yaml:"user"`
-	Password string `yaml:"password"`
+// Api
+type Api struct {
+	Version int `yaml:"version"`
 }
 
-// Disable
-type Disable struct {
-	Interval bool `yaml:"interval"`
-	Producer bool `yaml:"producer"`
+// Server
+type Server struct {
+	Port      int    `yaml:"port"`
+	Health    string `yaml:"health"`
+	SyncEvent string `yaml:"syncEvent"`
 }
 
-// Pulsar
-type Pulsar struct {
-	Env      string   `yaml:"env"`
-	DevHost  string   `yaml:"devHost"`
-	Producer Producer `yaml:"producer"`
-	Consumer Consumer `yaml:"consumer"`
-}
-
-// Consumer
-type Consumer struct {
-	Topic       string `yaml:"topic"`
-	Name        string `yaml:"name"`
-	Concurrency int    `yaml:"concurrency"`
+// Interval
+type Interval struct {
+	Retry        int    `yaml:"retry"`
+	RetryWait    int    `yaml:"retryWait"`
+	Daily        string `yaml:"daily"`
+	Latest       string `yaml:"latest"`
+	LatestDuring int    `yaml:"latestDuring"`
 }
 
 // Risingwave
 type Risingwave struct {
+	Password string `yaml:"password"`
 	Db       string `yaml:"db"`
 	Host     string `yaml:"host"`
 	Port     int    `yaml:"port"`
 	User     string `yaml:"user"`
-	Password string `yaml:"password"`
-}
-
-// Config
-type Config struct {
-	Server     Server     `yaml:"server"`
-	Log        Log        `yaml:"log"`
-	Lark       Lark       `yaml:"lark"`
-	Redis      Redis      `yaml:"redis"`
-	Github     Github     `yaml:"github"`
-	Interval   Interval   `yaml:"interval"`
-	Tidb       Tidb       `yaml:"tidb"`
-	Api        Api        `yaml:"api"`
-	Disable    Disable    `yaml:"disable"`
-	Pulsar     Pulsar     `yaml:"pulsar"`
-	Risingwave Risingwave `yaml:"risingwave"`
-}
-
-// Log
-type Log struct {
-	Level  string `yaml:"level"`
-	File   string `yaml:"file"`
-	Format string `yaml:"format"`
-}
-
-// Lua
-type Lua struct {
-	MergeLatest string `yaml:"mergeLatest"`
 }
 
 // Github
@@ -79,21 +42,11 @@ type Loop struct {
 	Break   int `yaml:"break"`
 }
 
-// Redis
-type Redis struct {
-	Db       int    `yaml:"db"`
-	Lua      Lua    `yaml:"lua"`
-	Host     string `yaml:"host"`
-	Password string `yaml:"password"`
-}
-
-// Interval
-type Interval struct {
-	RetryWait    int    `yaml:"retryWait"`
-	Daily        string `yaml:"daily"`
-	Latest       string `yaml:"latest"`
-	LatestDuring int    `yaml:"latestDuring"`
-	Retry        int    `yaml:"retry"`
+// Log
+type Log struct {
+	Format string `yaml:"format"`
+	Level  string `yaml:"level"`
+	File   string `yaml:"file"`
 }
 
 // Sql
@@ -102,30 +55,66 @@ type Sql struct {
 	Yearly      string `yaml:"yearly"`
 }
 
-// Producer
-type Producer struct {
-	Topic string `yaml:"topic"`
-	Retry int    `yaml:"retry"`
-}
-
-// Server
-type Server struct {
-	Port      int    `yaml:"port"`
-	Health    string `yaml:"health"`
-	SyncEvent string `yaml:"syncEvent"`
-}
-
 // Lark
 type Lark struct {
-	Webhook             string `yaml:"webhook"`
 	SignKey             string `yaml:"signKey"`
 	MinimumBreak        int    `yaml:"minimumBreak"`
 	ErrorTolerance      int    `yaml:"errorTolerance"`
 	ErrorToleranceBreak int    `yaml:"errorToleranceBreak"`
+	Webhook             string `yaml:"webhook"`
 }
 
-// Api
-type Api struct {
-	Version int `yaml:"version"`
+// Consumer
+type Consumer struct {
+	Name        string `yaml:"name"`
+	Concurrency int    `yaml:"concurrency"`
+	Topic       string `yaml:"topic"`
+}
+
+// Disable
+type Disable struct {
+	Producer bool `yaml:"producer"`
+	Interval bool `yaml:"interval"`
+}
+
+// Config
+type Config struct {
+	Tidb       Tidb       `yaml:"tidb"`
+	Risingwave Risingwave `yaml:"risingwave"`
+	Api        Api        `yaml:"api"`
+	Server     Server     `yaml:"server"`
+	Lark       Lark       `yaml:"lark"`
+	Pulsar     Pulsar     `yaml:"pulsar"`
+	Github     Github     `yaml:"github"`
+	Interval   Interval   `yaml:"interval"`
+	Disable    Disable    `yaml:"disable"`
+	Log        Log        `yaml:"log"`
+}
+
+// Tidb
+type Tidb struct {
+	Db       string `yaml:"db"`
+	Sql      Sql    `yaml:"sql"`
+	Host     string `yaml:"host"`
+	Port     int    `yaml:"port"`
+	User     string `yaml:"user"`
+	Password string `yaml:"password"`
+}
+
+// Pulsar
+type Pulsar struct {
+	Consumer Consumer `yaml:"consumer"`
+	Env      string   `yaml:"env"`
+	Host     string   `yaml:"host"`
+	Audience string   `yaml:"audience"`
+	Keypath  string   `yaml:"keypath"`
+	DevHost  string   `yaml:"devHost"`
+	Producer Producer `yaml:"producer"`
+}
+
+// Producer
+type Producer struct {
+	Topic string `yaml:"topic"`
+	Retry int    `yaml:"retry"`
 }
 

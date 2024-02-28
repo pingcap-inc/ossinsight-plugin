@@ -22,7 +22,8 @@ func GetAddAndDelLanguageMap() (map[string]string, map[string]string, error) {
 	rows, err := risingWave.Query(
 		context.Background(),
 		`
-		SELECT program_language, create_time, amount FROM mv_secondly_language_count
+		SELECT program_language, create_time, amount
+		FROM mv_secondly_language_count
 		WHERE create_time = @deletions_time
 			OR create_time = @additions_time
 		`,
