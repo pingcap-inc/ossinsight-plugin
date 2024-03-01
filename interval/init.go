@@ -3,6 +3,7 @@ package interval
 import (
 	"github.com/pingcap-inc/ossinsight-plugin/config"
 	"github.com/pingcap-inc/ossinsight-plugin/logger"
+	"github.com/pingcap-inc/ossinsight-plugin/risingwave"
 	"go.uber.org/zap"
 	"time"
 )
@@ -19,6 +20,12 @@ func InitInterval() {
 	go func() {
 		for range time.Tick(dailyInterval) {
 			retry(dailySync)
+		}
+	}()
+
+	go func() {
+		for range time.Tick(24 * time.Hour) {
+			risingwave.DataClean()
 		}
 	}()
 

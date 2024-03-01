@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func dataClean() {
+func DataClean() {
 	initRisingWave()
 
 	lasted := config.GetReadonlyConfig().Interval.LatestDuring * 2
