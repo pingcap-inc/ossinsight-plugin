@@ -27,3 +27,7 @@ func TestFetchEvents(t *testing.T) {
 
 	fmt.Println(events)
 }
+
+func TestProcessSingleRound(t *testing.T) {
+	ProcessSingleRound()
+}

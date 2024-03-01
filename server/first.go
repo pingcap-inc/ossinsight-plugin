@@ -6,7 +6,7 @@ import (
 	"github.com/pingcap-inc/ossinsight-plugin/config"
 	"github.com/pingcap-inc/ossinsight-plugin/interval"
 	"github.com/pingcap-inc/ossinsight-plugin/logger"
-	"github.com/pingcap-inc/ossinsight-plugin/redis"
+	"github.com/pingcap-inc/ossinsight-plugin/risingwave"
 	"go.uber.org/zap"
 )
 
@@ -32,39 +32,15 @@ type (
 func writeSamplingFirstResponse(connection *websocket.Conn) error {
 	version := config.GetReadonlyConfig().Api.Version
 
-	eventMap, err := redis.EventNumberGetThisYear()
+	eventMap, openMap, mergeMap, closeMap, devMap, err := risingwave.GetDailyMapsForThisYear()
 	if err != nil {
-		logger.Error("redis get this year event number error", zap.Error(err))
+		logger.Error("risingwave get this year event number error", zap.Error(err))
 		return err
 	}
 
-	openMap, err := redis.OpenPRNumberGetThisYear()
+	sumMap, err := risingwave.GetThisYearlySumMap()
 	if err != nil {
-		logger.Error("redis get this year open PR map error", zap.Error(err))
-		return err
-	}
-
-	mergeMap, err := redis.MergePRNumberGetThisYear()
-	if err != nil {
-		logger.Error("redis get this year merge map error", zap.Error(err))
-		return err
-	}
-
-	closeMap, err := redis.ClosePRNumberGetThisYear()
-	if err != nil {
-		logger.Error("redis get this year close map error", zap.Error(err))
-		return err
-	}
-
-	devMap, err := redis.DeveloperNumberGetThisYear()
-	if err != nil {
-		logger.Error("redis get this year dev map error", zap.Error(err))
-		return err
-	}
-
-	sumMap, err := redis.HGetAllYearSum()
-	if err != nil {
-		logger.Error("redis get this year sum map error", zap.Error(err))
+		logger.Error("risingwave get this year sum map error", zap.Error(err))
 		return err
 	}
 

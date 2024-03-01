@@ -12,14 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-.PHONY: redis config redis-clean build start restart stop
+.PHONY: redis pulsar config build start restart stop
 
 redis:
 	docker run -itd --name redis-test -p 6379:6379 redis
 
-redis-clean:
-	docker stop redis-test
-	docker rm redis-test
+pulsar:
+	docker run -itd -p 6650:6650 -p 8080:8080 apachepulsar/pulsar:3.1.2 bin/pulsar standalone
 
 config:
 	go install github.com/Icemap/yaml2go-cli@latest
@@ -43,3 +42,7 @@ restart:
 stop:
 	pm2 stop ossinsight-plugin
 	pm2 delete ossinsight-plugin
+
+risingwave_recreate:
+	psql -h 192.168.0.3 -p 4566 -d dev -U root -a -f ./risingwave/drop_objects.sql
+	psql -h 192.168.0.3 -p 4566 -d dev -U root -a -f ./risingwave/create_objects.sql

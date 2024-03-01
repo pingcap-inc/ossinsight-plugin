@@ -3,7 +3,7 @@ package interval
 import (
 	"fmt"
 	"github.com/pingcap-inc/ossinsight-plugin/logger"
-	"github.com/pingcap-inc/ossinsight-plugin/redis"
+	"github.com/pingcap-inc/ossinsight-plugin/risingwave"
 	"go.uber.org/zap"
 )
 
@@ -12,7 +12,7 @@ var latestLanguageMapListenerList = make(map[string]chan map[string]int)
 var cacheLatestLanguageMap = make(map[string]int)
 
 func latestLanguageLoad() error {
-	languageMap, err := redis.MergeLatestLanguage()
+	languageMap, err := risingwave.GetLatestHourLanguageMap()
 	if err != nil {
 		logger.Error("load language map error", zap.Error(err))
 		return err
