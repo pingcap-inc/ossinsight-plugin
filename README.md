@@ -132,7 +132,7 @@
 
 ### Initial Message
 
-The initial message will has `firstMessageTag` tag, and it will be true.
+The initial message will have `firstMessageTag` tag, and it will be true.
 
 E.g.:
 

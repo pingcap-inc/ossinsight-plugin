@@ -8,10 +8,10 @@ import (
 
 type DailyEvent struct {
 	EventDay   string `json:"event_day"`
-	Developers string `json:"developers"`
-	OpenedPRs  string `json:"opened_prs"`
-	ClosedPRs  string `json:"closed_prs"`
-	MergedPRs  string `json:"merged_prs"`
+	Developers int64  `json:"developers"`
+	OpenedPRs  int64  `json:"opened_prs"`
+	ClosedPRs  int64  `json:"closed_prs"`
+	MergedPRs  int64  `json:"merged_prs"`
 }
 
 func QueryThisYearDailyEvent() ([]DailyEvent, error) {
