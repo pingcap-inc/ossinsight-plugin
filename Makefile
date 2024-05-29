@@ -32,7 +32,7 @@ build-server:
 	CGO_ENABLED=1 GOOS=linux GOARCH=amd64 CC=x86_64-linux-musl-gcc CGO_LDFLAGS="-static" go build -o bin/ossinsight-plugin github.com/pingcap-inc/ossinsight-plugin/server
 
 start:
-	pm2 start bin/ossinsight-plugin --name ossinsight-plugin
+	pm2 start bin/ossinsight-plugin --name ossinsight-plugin -max-memory-restart 512MB
 
 restart:
 	git pull origin main
